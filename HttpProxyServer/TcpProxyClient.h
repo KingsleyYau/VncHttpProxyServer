@@ -25,7 +25,7 @@ public:
 	virtual void OnConnected(TcpProxyClient* client) = 0;
 	virtual void OnDisConnected(TcpProxyClient* client) = 0;
 
-	virtual void OnRecvProxyBuffer(TcpProxyClient* client, int seq, const char* buffer, int len) = 0;
+	virtual void OnRecvProxyBuffer(TcpProxyClient* client, int seq, int fd, const char* buffer, int len) = 0;
 
 };
 class TcpProxyClientRunnable;
@@ -41,7 +41,7 @@ public:
 	/**
 	 * 返回代理Http请求结果到服务器
 	 */
-	bool SendProxyBuffer(bool bFlag, int seq, const char* buffer, int len);
+	bool SendProxyBuffer(bool bFlag, int seq, int fd, const char* buffer, int len);
 
 	// 处理线程
 	void HandleTcpProxyClientRunnable();

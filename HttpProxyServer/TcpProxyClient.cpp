@@ -158,12 +158,14 @@ bool TcpProxyClient::RecvCommand(CMD &cmd) {
 			"TcpProxyClient::RecvCommand( "
 			"cmd.header.cmdt : %d, "
 			"cmd.header.seq : %d, "
+			"cmd.header.fd : %d, "
 			"cmd.header.bNew : %s, "
 			"cmd.header.len : %d, "
 			"cmd.param : \n%s\n"
 			") \n",
 			cmd.header.cmdt,
 			cmd.header.seq,
+			cmd.header.fd,
 			cmd.header.bNew?"true":"false",
 			cmd.header.len,
 			cmd.param
@@ -191,15 +193,16 @@ void TcpProxyClient::HandleRecvProxyBuffer(const CMD &cmd) {
 	// 代理Http请求
 	printf("TcpProxyClient::HandleRecvProxyBuffer( [收到命令:代理Http请求] ) \n");
 	if( mpTcpProxyClientCallback != NULL ) {
-		mpTcpProxyClientCallback->OnRecvProxyBuffer(this, cmd.header.seq, cmd.param, cmd.header.len);
+		mpTcpProxyClientCallback->OnRecvProxyBuffer(this, cmd.header.seq, cmd.header.fd, cmd.param, cmd.header.len);
 	}
 }
 
-bool TcpProxyClient::SendProxyBuffer(bool bFlag, int seq, const char* buffer, int len) {
+bool TcpProxyClient::SendProxyBuffer(bool bFlag, int seq, int fd, const char* buffer, int len) {
 	CMD cmd;
 	cmd.header.cmdt = CommandTypeProxy;
 	cmd.header.bNew = false;
 	cmd.header.seq = seq;
+	cmd.header.fd = fd;
 	cmd.header.len = MIN(len, MAX_PARAM_LEN - 1);
 	memcpy(cmd.param, buffer, cmd.header.len);
 	cmd.param[cmd.header.len] = '\0';
@@ -212,12 +215,14 @@ bool TcpProxyClient::SendCommand(const CMD &cmd) {
 	printf("TcpProxyClient::SendCommand( "
 			"cmd.header.cmdt : %d, "
 			"cmd.header.seq : %d, "
+			"cmd.header.fd : %d, "
 			"cmd.header.bNew : %s, "
 			"cmd.header.len : %d, "
 			"cmd.param : \n%s\n"
 			")\n",
 			cmd.header.cmdt,
 			cmd.header.seq,
+			cmd.header.fd,
 			cmd.header.bNew?"true":"false",
 			cmd.header.len,
 			cmd.param

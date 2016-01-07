@@ -23,12 +23,15 @@ void HttpProxyServer::OnDisConnected(TcpProxyClient* client) {
 
 }
 
-void HttpProxyServer::OnRecvProxyBuffer(TcpProxyClient* client, int seq, const char* buffer, int len) {
+void HttpProxyServer::OnRecvProxyBuffer(TcpProxyClient* client, int seq, int fd, const char* buffer, int len) {
 	// 代理Http请求
 	// 直接返回200
 	char respond[1024];
 	sprintf(respond, "HTTP/1.1 200 OK\r\nContext-Length:%d\r\n\r\n%s", strlen("<html>hello world</html>"), "<html>hello world</html>");
-	mTcpProxyClient.SendProxyBuffer(true, seq, respond, strlen(respond));
+
+//	DataHttpParser dataHttpParser;
+
+	mTcpProxyClient.SendProxyBuffer(true, seq, fd, respond, strlen(respond));
 }
 
 bool HttpProxyServer::Run() {

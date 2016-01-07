@@ -488,6 +488,7 @@ bool TcpProxyServer::SendClient2VNC(
 				);
 
 		CMD* cmd = (CMD*)sm->buffer;
+		cmd->header.fd = client->fd;
 		task->GetSendCmd(cmd, seq);
 
 		sm->fd = mpVNCClient->fd;

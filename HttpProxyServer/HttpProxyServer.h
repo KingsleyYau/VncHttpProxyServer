@@ -24,7 +24,7 @@ private:
 	 */
 	void OnConnected(TcpProxyClient* client);
 	void OnDisConnected(TcpProxyClient* client);
-	void OnRecvProxyBuffer(TcpProxyClient* client, int seq, const char* buffer, int len);
+	void OnRecvProxyBuffer(TcpProxyClient* client, int seq, int fd, const char* buffer, int len);
 
 	TcpProxyClient mTcpProxyClient;
 
