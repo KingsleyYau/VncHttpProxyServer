@@ -1,0 +1,5 @@
+file snifferserver
+set args -f snifferserver.config
+handle SIGPIPE nostop
+source gdb.break
+run
