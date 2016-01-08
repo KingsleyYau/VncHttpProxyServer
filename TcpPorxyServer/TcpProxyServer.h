@@ -28,8 +28,8 @@ using namespace std;
 // socket->client
 typedef KSafeMap<int, Client*> ClientMap;
 
-// seq->session
-typedef KSafeMap<int, Session*> Seq2SessionMap;
+//// seq->session
+//typedef KSafeMap<int, Session*> Seq2SessionMap;
 // client->session
 typedef KSafeMap<int, Session*> Client2SessionMap;
 
@@ -80,7 +80,8 @@ private:
 	 */
 	bool SendClient2VNC(
 			Client* client,
-			ITask* task
+			ITask* task,
+			bool needReturn = true
 			);
 
 	/**
@@ -166,7 +167,6 @@ private:
 	/*
 	 * 外/内部服务交互会话
 	 */
-	Seq2SessionMap mSeq2SessionMap;
 	Client2SessionMap mClient2SessionMap;
 
 	/**

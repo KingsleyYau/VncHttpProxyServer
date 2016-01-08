@@ -17,12 +17,13 @@ ProxyClientTask::~ProxyClientTask() {
 	// TODO Auto-generated destructor stub
 }
 
-void ProxyClientTask::GetSendCmd(CMD* cmd, int seq) {
+void ProxyClientTask::GetSendCmd(CMD* cmd, int seq, int fd) {
 	this->seq = seq;
 
 	cmd->header.cmdt = CommandTypeProxy;
 	cmd->header.bNew = true;
 	cmd->header.seq = seq;
+	cmd->header.fd = fd;
 	cmd->header.len = miLen;
 
 	if( mpBuffer != NULL && miLen > 0 ) {

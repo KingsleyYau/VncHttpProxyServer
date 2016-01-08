@@ -17,12 +17,19 @@ using namespace std;
 typedef map<int, ITask*> TaskMap;
 class Session {
 public:
-	Session(Client* client, ITask* task);
+	Session(Client* client);
 	virtual ~Session();
 
-	Client* client;
-	ITask* task;
+	bool InsertRequestTask(int seq, ITask* task);
+	ITask* EraseRequestTask(int seq);
 
+	Client* client;
+
+private:
+	/**
+	 * 外部服务发起的命令列表
+	 */
+	TaskMap mRequestTaskMap;
 };
 
 #endif /* SESSION_H_ */

@@ -24,7 +24,7 @@ LIBS =		-L. \
 
 COMMONOBJ =	common/LogFile.o common/md5.o common/KThread.o \
 			common/ConfFile.o common/Arithmetic.o
-TASKOBJ = 	task/BaseTask.o task/ProxyClientTask.o 
+TASKOBJ = 	task/BaseTask.o task/ProxyClientTask.o task/ProxyClientDisconnectTask.o
 OBJS =		server.o TcpProxyServer.o TcpServer.o MessageList.o LogManager.o \
 			DataParser.o Client.o Session.o
 OBJS +=		$(COMMONOBJ)

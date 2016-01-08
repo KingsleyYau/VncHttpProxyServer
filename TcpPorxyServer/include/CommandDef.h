@@ -19,6 +19,7 @@
 typedef enum CommandType {
 	CommandTypeNone = 0,
 	CommandTypeProxy,
+	CommandTypeProxyDisconnect
 } CMDT;
 
 /*
@@ -29,6 +30,7 @@ typedef struct CommandHedaer {
 		cmdt = CommandTypeNone;
 		len = 0;
 		seq = 0;
+		fd = 0;
 		bNew = false;
 	}
 
@@ -36,6 +38,7 @@ typedef struct CommandHedaer {
 		cmdt = item.cmdt;
 		len = item.len;
 		seq = item.seq;
+		fd = item.fd;
 		bNew = item.bNew;
 	}
 
@@ -43,6 +46,7 @@ typedef struct CommandHedaer {
 		cmdt = item.cmdt;
 		len = item.len;
 		seq = item.seq;
+		fd = item.fd;
 		bNew = item.bNew;
 		return *this;
 	}
@@ -50,6 +54,7 @@ typedef struct CommandHedaer {
 	CMDT cmdt;			// 类型
 	int len;			// 参数长度
 	int seq;			// 请求号
+	int fd;				// 客户端号
 	bool bNew;			// 主动发起请求
 } CMDH;
 

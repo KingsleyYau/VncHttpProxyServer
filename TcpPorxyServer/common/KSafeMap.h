@@ -32,16 +32,12 @@ public:
 		mMap.insert( typename SafeMap::value_type(key, value) );
 	}
 
-	iterator Erase(Key key) {
-		typename SafeMap::iterator itr = mMap.find(key);
-		if( itr != mMap.end() ) {
-			mMap.erase(itr);
-		}
-		return itr;
+	void Erase(iterator itr) {
+		mMap.erase(itr);
 	}
 
-	int Size() {
-		return (int)mMap.size();
+	void Clear() {
+		mMap.clear();
 	}
 
 	void Lock() {
@@ -67,6 +63,10 @@ public:
 
 	bool Empty() {
 		return mMap.empty();
+	}
+
+	int Size() {
+		return mMap.size();
 	}
 
 	KMutex mKMutex;

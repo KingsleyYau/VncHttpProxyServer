@@ -15,7 +15,7 @@ public:
 	ProxyClientTask();
 	virtual ~ProxyClientTask();
 
-	void GetSendCmd(CMD* cmd, int seq);
+	void GetSendCmd(CMD* cmd, int seq, int fd);
 	bool GetReturnData(const CMD* cmd, char* buffer, int& len);
 
 	void SetBuffer(const char* buffer, int len);

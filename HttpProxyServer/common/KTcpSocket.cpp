@@ -105,7 +105,7 @@ int KTcpSocket::Connect(string strAddress, unsigned int uiPort, bool bBlocking) 
 			goto EXIT_ERROR_TCP;
 		}
 
-		if (connect(mSocket, (struct sockaddr *)&dest, sizeof(dest)) != -1) {
+		if ( connect(mSocket, (struct sockaddr *)&dest, sizeof(dest)) != -1) {
 			iRet = 1;
 		}
 		else {
@@ -117,6 +117,16 @@ int KTcpSocket::Connect(string strAddress, unsigned int uiPort, bool bBlocking) 
 			FD_SET(mSocket, &wset);
 			int iRetS = select(mSocket + 1, NULL, &wset, NULL, &tout);
 			if (iRetS > 0) {
+//				int error, len;
+//				getsockopt(mSocket, SOL_SOCKET, SO_ERROR, &error, (socklen_t *)&len);
+//				if(error == 0) {
+//					iRet = 1;
+//
+//				} else {
+//					iRet = -1;
+//					printf("KTcpSocket::Connect( connect timeout ) \n");
+//					goto EXIT_ERROR_TCP;
+//				}
 				iRet = 1;
 
 			} else {

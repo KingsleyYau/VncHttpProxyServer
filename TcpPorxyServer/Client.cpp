@@ -165,7 +165,7 @@ int Client::ParseData(Message* m)  {
 					ret = ParseDataNoCache(mc);
 
 					mIdleMessageList.PushBack(mc);
-					mMessageMap.Erase(miDataPacketRecvSeq);
+					mMessageMap.Erase(itr);
 
 					if( ret != -1 ) {
 						miDataPacketRecvSeq++;

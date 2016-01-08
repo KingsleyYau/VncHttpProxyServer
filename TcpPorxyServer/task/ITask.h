@@ -21,7 +21,7 @@ class ITask {
 public:
 	virtual ~ITask(){};
 
-	virtual void GetSendCmd(CMD* cmd, int seq) = 0;
+	virtual void GetSendCmd(CMD* cmd, int seq, int fd) = 0;
 	virtual bool GetReturnData(const CMD* cmd, char* buffer, int& len) = 0;
 };
 

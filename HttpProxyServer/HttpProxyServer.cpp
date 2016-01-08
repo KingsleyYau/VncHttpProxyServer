@@ -27,11 +27,42 @@ void HttpProxyServer::OnRecvProxyBuffer(TcpProxyClient* client, int seq, int fd,
 	// 代理Http请求
 	// 直接返回200
 	char respond[1024];
-	sprintf(respond, "HTTP/1.1 200 OK\r\nContext-Length:%d\r\n\r\n%s", strlen("<html>hello world</html>"), "<html>hello world</html>");
+	sprintf(respond, "HTTP/1.1 200 OK\r\nContext-Length:%d\r\nConnection:Close\r\n\r\n%s\n", strlen("<html>hello world</html>"), "<html>hello world</html>");
 
-//	DataHttpParser dataHttpParser;
+	DataHttpParser* pDataHttpParser;
 
-	mTcpProxyClient.SendProxyBuffer(true, seq, fd, respond, strlen(respond));
+	mDataHttpParserMap.Lock();
+	DataHttpParserMap::iterator itr = mDataHttpParserMap.Find(fd);
+	if( itr == mDataHttpParserMap.End() ) {
+		pDataHttpParser = new DataHttpParser();
+		mDataHttpParserMap.Insert(fd, pDataHttpParser);
+	} else {
+		pDataHttpParser = itr->second;
+	}
+	mDataHttpParserMap.Unlock();
+
+//	int ret = pDataHttpParser->ParseData(buffer, len);
+
+	// 返回代理请求
+	bool bFlag = mTcpProxyClient.SendProxyBuffer(seq, fd, respond, strlen(respond));
+	if( bFlag ) {
+		// 返回断开连接
+		mTcpProxyClient.SendProxyDisconnect(fd);
+	}
+}
+
+void HttpProxyServer::OnRecvProxyDisconnect(TcpProxyClient* client, int seq, int fd) {
+	mDataHttpParserMap.Lock();
+	DataHttpParserMap::iterator itr = mDataHttpParserMap.Find(fd);
+	if( itr != mDataHttpParserMap.End() ) {
+		DataHttpParser* pDataHttpParser = itr->second;
+		if( pDataHttpParser != NULL ) {
+			delete pDataHttpParser;
+			pDataHttpParser = NULL;
+		}
+		mDataHttpParserMap.Erase(itr);
+	}
+	mDataHttpParserMap.Unlock();
 }
 
 bool HttpProxyServer::Run() {

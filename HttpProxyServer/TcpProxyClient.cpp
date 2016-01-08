@@ -190,14 +190,20 @@ void TcpProxyClient::OnRecvCommand(const CMD &cmd) {
 }
 
 void TcpProxyClient::HandleRecvProxyBuffer(const CMD &cmd) {
-	// 代理Http请求
 	printf("TcpProxyClient::HandleRecvProxyBuffer( [收到命令:代理Http请求] ) \n");
 	if( mpTcpProxyClientCallback != NULL ) {
 		mpTcpProxyClientCallback->OnRecvProxyBuffer(this, cmd.header.seq, cmd.header.fd, cmd.param, cmd.header.len);
 	}
 }
 
-bool TcpProxyClient::SendProxyBuffer(bool bFlag, int seq, int fd, const char* buffer, int len) {
+void TcpProxyClient::HandleRecvProxyDisconnect(const CMD &cmd) {
+	printf("TcpProxyClient::OnRecvProxyDisconnect( [收到命令:代理断开请求] ) \n");
+	if( mpTcpProxyClientCallback != NULL ) {
+		mpTcpProxyClientCallback->OnRecvProxyDisconnect(this, cmd.header.seq, cmd.header.fd);
+	}
+}
+
+bool TcpProxyClient::SendProxyBuffer(int seq, int fd, const char* buffer, int len) {
 	CMD cmd;
 	cmd.header.cmdt = CommandTypeProxy;
 	cmd.header.bNew = false;
@@ -205,6 +211,22 @@ bool TcpProxyClient::SendProxyBuffer(bool bFlag, int seq, int fd, const char* bu
 	cmd.header.fd = fd;
 	cmd.header.len = MIN(len, MAX_PARAM_LEN - 1);
 	memcpy(cmd.param, buffer, cmd.header.len);
+	cmd.param[cmd.header.len] = '\0';
+	return SendCommand(cmd);
+}
+
+/**
+ * 返回代理断开连接到服务器
+ */
+bool TcpProxyClient::SendProxyDisconnect(int fd) {
+	CMD cmd;
+	cmd.header.cmdt = CommandTypeProxyDisconnect;
+	cmd.header.bNew = true;
+	mSendMutex.lock();
+	cmd.header.seq = mSendSeq++;
+	mSendMutex.unlock();
+	cmd.header.fd = fd;
+	cmd.header.len = 0;
 	cmd.param[cmd.header.len] = '\0';
 	return SendCommand(cmd);
 }

@@ -899,18 +899,18 @@ void TcpServer::Recv_Callback(ev_io *w, int revents) {
 //}
 
 void TcpServer::SendMessageByQueue(Message *m) {
-	Arithmetic ari;
+//	Arithmetic ari;
 	LogManager::GetLogManager()->Log(
 			LOG_MSG,
 			"TcpServer::SendMessageByQueue( "
 			"tid : %d, "
-			"m->fd : [%d], "
-			"buffer( len : %d ) : [\n%s\n] "
+			"m->fd : [%d] "
+//			"buffer( len : %d ) : [\n%s\n] "
 			")",
 			(int)syscall(SYS_gettid),
 			m->fd,
-			m->len,
-			ari.AsciiToHexWithSep(m->buffer, m->len).c_str()
+			m->len
+//			ari.AsciiToHexWithSep(m->buffer, m->len).c_str()
 			);
 
 	mCloseMutex.lock();
@@ -1035,7 +1035,7 @@ void TcpServer::Disconnect(int fd) {
 			fd
 			);
 
-	shutdown(fd, SHUT_RDWR);
+	shutdown(fd, SHUT_RD);
 
 }
 
@@ -1215,11 +1215,13 @@ bool TcpServer::OnAccept(int fd, char* ip) {
 			fd
 			);
 
+	bool bFlag = true;
+
 	if( mpTcpServerObserver != NULL ) {
-		mpTcpServerObserver->OnAccept(this, fd, ip);
+		bFlag = mpTcpServerObserver->OnAccept(this, fd, ip);
 	}
 
-	return true;
+	return bFlag;
 }
 
 void TcpServer::OnRecvMessage(Message *m) {

@@ -57,6 +57,10 @@ private:
 	int miSendMaxSeq;
 	KMutex mSeqMutex;
 
+	char mBuffer[MAX_BUFFER_LEN];
+	bool mbReceiveFirstLineFinish;
+	int mIndex = 0;
+
 	bool ParseFirstLine(char* buffer);
 	void ParseParameters(char* buffer);
 };

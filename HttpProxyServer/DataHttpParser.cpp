@@ -26,64 +26,19 @@ void DataHttpParser::Reset() {
 
 int DataHttpParser::ParseData(char* buffer, int len) {
 	int result = 0;
-	int j = 0;
 
-	// parse header
-	char *pFirst = NULL;
-	char*p = strtok_r(buffer, "\r\n", &pFirst);
-	while( p != NULL ) {
-		if( j == 0 ) {
-			if( ParseFirstLine(p) ) {
-				result = 1;
-			}
-
-			// only first line is useful
-			break;
-		}
-		j++;
-		p = strtok_r(NULL, "\r\n", &pFirst);
+	int recvLen = (len < MAX_BUFFER_LEN - mFirstLineIndex)?len:MAX_BUFFER_LEN - mFirstLineIndex;
+	if( recvLen > 0 ) {
+		memcpy(mBuffer + mIndex, buffer, recvLen);
+		mIndex += recvLen;
+		mBuffer[mIndex + 1] = '\0';
 	}
 
-//	if( !mbReceiveHeaderFinish ) {
-//		int recvLen = (len < MAX_BUFFER_LEN - mHeaderIndex)?len:MAX_BUFFER_LEN - mHeaderIndex;
-//		if( recvLen > 0 ) {
-//			memcpy(mHeaderBuffer + mHeaderIndex, buffer, recvLen);
-//			mHeaderIndex += recvLen;
-//			mHeaderBuffer[mHeaderIndex + 1] = '\0';
-//
-//			// find Header Sep
-//			char *pBody = strstr(mHeaderBuffer, "\r\n\r\n");
-//			if( pBody != NULL ) {
-//				pBody += strlen("\r\n\r\n");
-//				mbReceiveHeaderFinish = true;
-//
-//				// parse header
-//				char *pFirst = NULL;
-//				char*p = strtok_r(mHeaderBuffer, "\r\n", &pFirst);
-//				while( p != NULL ) {
-//					if( j == 0 ) {
-//						ParseFirstLine(p);
-//						result = 1;
-//						// only first line is useful
-//						break;
-//					} else {
-//						if( (pParam = strstr(p, "Content-Length:")) != NULL ) {
-//							int len = strlen("Content-Length:");
-//							// find Content-Length
-//							pParam += len;
-//							if( pParam != NULL  ) {
-//								memcpy(temp, pParam, strlen(p) - len);
-//								miContentLength = atoi(temp);
-//							}
-//						}
-//					}
-//					j++;
-//					p = strtok_r(NULL, "\r\n", &pFirst);
-//				}
-//			}
-//		}
-//	}
-
+	if( !mbReceiveFirstLineFinish ) {
+		if( ParseFirstLine(buffer) ) {
+			mbReceiveFirstLineFinish = true;
+		}
+	}
 
 	return result;
 }
