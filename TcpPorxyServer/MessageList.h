@@ -33,7 +33,7 @@ typedef struct Message {
 	unsigned int 	starttime;
 	unsigned int	totaltime;
 	int		type;
-	char	buffer[MAX_BUFFER_LEN];
+	char	buffer[MAX_LOG_BUFFER_LEN];
 	char    bitBuffer[128];
 	ev_io *wr;
 	ev_io *ww;

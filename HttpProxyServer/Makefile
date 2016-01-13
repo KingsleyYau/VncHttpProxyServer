@@ -16,15 +16,16 @@ CXXFLAGS = -O2 -g
 endif
 
 CXXFLAGS +=	-Wall -fmessage-length=0 -Wunused-variable
-CXXFLAGS +=	-I. -Iinclude
+CXXFLAGS +=	-I. -Iinclude -Icurl/include
 
 LIBS =		-L. \
+			-Wl,-Bdynamic -Lcurl/lib/.libs -lcurl \
 			-Wl,-Bdynamic -ldl -lz -lpthread 
 
 COMMONOBJ =	common/LogFile.o common/md5.o common/KThread.o \
 			common/ConfFile.o common/Arithmetic.o common/KSocket.o common/KTcpSocket.o
 OBJS =		server.o LogManager.o MessageList.o DataParser.o DataHttpParser.o \
-			HttpProxyServer.o TcpProxyClient.o
+			HttpProxyServer.o TcpProxyClient.o HttpClient.o HttpRequest.o
 OBJS +=		$(COMMONOBJ)
 TARGET =	httpproxyserver
 

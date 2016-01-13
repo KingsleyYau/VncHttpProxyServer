@@ -21,10 +21,10 @@
 #include <algorithm>
 
 #include <string>
-#include <map>
+#include <list>
 using namespace std;
 
-typedef map<string, string> Parameters;
+typedef list<string> Headers;
 
 typedef enum HttpType {
 	GET,
@@ -37,32 +37,30 @@ public:
 	DataHttpParser();
 	virtual ~DataHttpParser();
 
-	int ParseData(char* buffer, int len);
-
-	const string& GetParam(const char* key);
-	const string& GetPath();
-	HttpType GetType();
-
-	void SetSendMaxSeq(int seq);
-	bool IsFinishSeq(int seq);
+	int ParseData(const char* buffer, int len);
 
 	void Reset();
 
-private:
-	HttpType mHttpType;
-	int miContentLength;
-	Parameters mParameters;
-	string mPath;
+	string GetUrl();
+	const char* GetBody();
+	int GetContentLength();
+	const Headers& GetHeaders();
 
-	int miSendMaxSeq;
-	KMutex mSeqMutex;
+private:
+	bool ParseFirstLine(char* buffer);
+
+	string mHost;
+	string mPath;
+	int miContentLength;
 
 	char mBuffer[MAX_BUFFER_LEN];
-	bool mbReceiveFirstLineFinish;
-	int mIndex = 0;
+	bool mbReceiveHeaderFinish;
+	int mIndex;
+	int mHeaderIndex;
 
-	bool ParseFirstLine(char* buffer);
-	void ParseParameters(char* buffer);
+	HttpType mHttpType;
+
+	Headers mHeaders;
 };
 
 #endif /* DATAHTTPPARSER_H_ */

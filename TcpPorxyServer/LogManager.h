@@ -43,8 +43,8 @@ public:
 	bool Log(LOG_LEVEL nLevel, const char *format, ...);
 	int MkDir(const char* pDir);
 
-	MessageList *GetIdleMessageList();
-	MessageList *GetLogMessageList();
+//	MessageList *GetIdleMessageList();
+//	MessageList *GetLogMessageList();
 
 public:
 	MessageList mIdleMessageList;

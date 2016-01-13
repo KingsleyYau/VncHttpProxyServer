@@ -13,7 +13,6 @@
 #include "Session.h"
 #include "MessageList.h"
 #include "TcpServer.h"
-#include "DataHttpParser.h"
 
 #include <json/json.h>
 #include <common/ConfFile.hpp>

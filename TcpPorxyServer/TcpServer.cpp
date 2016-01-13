@@ -931,9 +931,21 @@ void TcpServer::SendMessageImmediately(Message *m) {
 	int index = 0;
 	int fd = m->fd;
 
-	Arithmetic ari;
 	LogManager::GetLogManager()->Log(
 			LOG_MSG,
+			"TcpServer::SendMessageImmediately( "
+			"tid : %d, "
+			"fd : [%d], "
+			"buffer( len : %d ) "
+			")",
+			(int)syscall(SYS_gettid),
+			fd,
+			len
+			);
+
+	Arithmetic ari;
+	LogManager::GetLogManager()->Log(
+			LOG_STAT,
 			"TcpServer::SendMessageImmediately( "
 			"tid : %d, "
 			"fd : [%d], "
@@ -1225,9 +1237,21 @@ bool TcpServer::OnAccept(int fd, char* ip) {
 }
 
 void TcpServer::OnRecvMessage(Message *m) {
-	Arithmetic ari;
 	LogManager::GetLogManager()->Log(
 			LOG_MSG,
+			"TcpServer::OnRecvMessage( "
+			"tid : %d, "
+			"m->fd : [%d], "
+			"buffer( len : %d ) "
+			")",
+			(int)syscall(SYS_gettid),
+			m->fd,
+			m->len
+			);
+
+	Arithmetic ari;
+	LogManager::GetLogManager()->Log(
+			LOG_STAT,
 			"TcpServer::OnRecvMessage( "
 			"tid : %d, "
 			"m->fd : [%d], "

@@ -124,28 +124,30 @@ bool LogManager::Log(LOG_LEVEL nLevel, const char *format, ...) {
             g_pFileCtrl->OpenLogFile();
 	    }
 
-        Message *lm = mIdleMessageList.PopFront();
-        if( lm != NULL ) {
-            lm->Reset();
+//        Message *lm = mIdleMessageList.PopFront();
+//        if( lm != NULL ) {
+//            lm->Reset();
+
+        char bitBuffer[64];
+        char buffer[MAX_LOG_BUFFER_LEN];
 
     	    //get current time
     	    time_t stm = time(NULL);
             struct tm tTime;
             localtime_r(&stm,&tTime);
-            snprintf(lm->bitBuffer, 64, "[ %d-%02d-%02d %02d:%02d:%02d ] ", tTime.tm_year+1900, tTime.tm_mon+1, tTime.tm_mday, tTime.tm_hour, tTime.tm_min, tTime.tm_sec);
+            snprintf(bitBuffer, 64, "[ %d-%02d-%02d %02d:%02d:%02d ] ", tTime.tm_year+1900, tTime.tm_mon+1, tTime.tm_mday, tTime.tm_hour, tTime.tm_min, tTime.tm_sec);
 
             //get va_list
-            char *p = lm->buffer;
             va_list	agList;
             va_start(agList, format);
-            vsnprintf(p, MAX_BUFFER_LEN, format, agList);
+            vsnprintf(buffer, MAX_LOG_BUFFER_LEN - 1, format, agList);
             va_end(agList);
 
-            strcat(lm->buffer, "\n");
-            g_pFileCtrl->LogMsg(lm->buffer, (int)strlen(lm->buffer), lm->bitBuffer);
+            strcat(buffer, "\n");
+            g_pFileCtrl->LogMsg(buffer, (int)strlen(buffer), bitBuffer);
 
-            mIdleMessageList.PushBack(lm);
-        }
+//            mIdleMessageList.PushBack(lm);
+//        }
 
         return true;
     }
@@ -155,10 +157,10 @@ bool LogManager::Log(LOG_LEVEL nLevel, const char *format, ...) {
 
 bool LogManager::Start(int maxIdle, LOG_LEVEL nLevel, const string& dir) {
 	/* create log buffers */
-	for(int i = 0; i < maxIdle; i++) {
-		Message *m = new Message();
-		mIdleMessageList.PushBack(m);
-	}
+//	for(int i = 0; i < maxIdle; i++) {
+//		Message *m = new Message();
+//		mIdleMessageList.PushBack(m);
+//	}
 
 	mIsRunning = true;
 
@@ -195,9 +197,9 @@ bool LogManager::Stop() {
 //		delete m;
 //	}
 
-	while( NULL != ( m = mIdleMessageList.PopFront() ) ) {
-		delete m;
-	}
+//	while( NULL != ( m = mIdleMessageList.PopFront() ) ) {
+//		delete m;
+//	}
 
 	return true;
 }
@@ -206,13 +208,13 @@ bool LogManager::IsRunning() {
 	return mIsRunning;
 }
 
-MessageList *LogManager::GetIdleMessageList() {
-	return &mIdleMessageList;
-}
-
-MessageList *LogManager::GetLogMessageList() {
-	return &mLogMessageList;
-}
+//MessageList *LogManager::GetIdleMessageList() {
+//	return &mIdleMessageList;
+//}
+//
+//MessageList *LogManager::GetLogMessageList() {
+//	return &mLogMessageList;
+//}
 
 int LogManager::MkDir(const char* pDir) {
     int ret = 0;

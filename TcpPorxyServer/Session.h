@@ -21,6 +21,7 @@ public:
 	virtual ~Session();
 
 	bool InsertRequestTask(int seq, ITask* task);
+	ITask* FindRequestTask(int seq);
 	ITask* EraseRequestTask(int seq);
 
 	Client* client;

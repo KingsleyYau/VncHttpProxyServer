@@ -74,7 +74,8 @@ int Client::ParseData(Message* m)  {
 				"Client::ParseData( "
 				"tid : %d, "
 				"[收到客户端乱序的数据包] "
-				")"
+				")",
+				(int)syscall(SYS_gettid)
 				);
 
 		// 缓存到队列
@@ -85,7 +86,8 @@ int Client::ParseData(Message* m)  {
 					"Client::ParseData( "
 					"tid : %d, "
 					"[缓存客户端乱序的数据包到队列] "
-					")"
+					")",
+					(int)syscall(SYS_gettid)
 					);
 
 			memcpy(mc->buffer, buffer, len);
@@ -100,7 +102,8 @@ int Client::ParseData(Message* m)  {
 					"Client::ParseData( "
 					"tid : %d, "
 					"[客户端没有缓存空间] "
-					")"
+					")",
+					(int)syscall(SYS_gettid)
 					);
 			ret = -1;
 		}

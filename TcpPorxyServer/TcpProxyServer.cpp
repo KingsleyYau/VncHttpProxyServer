@@ -451,7 +451,7 @@ bool TcpProxyServer::SendClient2VNC(
 			LOG_MSG,
 			"TcpProxyServer::SendClient2VNC( "
 			"tid : %d, "
-			"[外部服务(VNC), 发送命令], "
+			"[外部服务(VNC), 发送命令到VNC], "
 			"client->fd : [%d] "
 			")",
 			(int)syscall(SYS_gettid),
@@ -465,7 +465,7 @@ bool TcpProxyServer::SendClient2VNC(
 				LOG_MSG,
 				"TcpProxyServer::SendClient2VNC( "
 				"tid : %d, "
-				"[外部服务(VNC), 发送命令, 服务不在线], "
+				"[外部服务(VNC), 发送命令到VNC, 服务不在线], "
 				"client->fd : [%d] "
 				")",
 				(int)syscall(SYS_gettid),
@@ -487,7 +487,7 @@ bool TcpProxyServer::SendClient2VNC(
 					LOG_MSG,
 					"TcpProxyServer::SendClient2VNC( "
 					"tid : %d, "
-					"[外部服务(VNC), 发送命令, 继续会话], "
+					"[外部服务(VNC), 发送命令到VNC, 继续会话], "
 					"client->fd : [%d], "
 					"session : %p "
 					")",
@@ -503,7 +503,7 @@ bool TcpProxyServer::SendClient2VNC(
 					LOG_MSG,
 					"TcpProxyServer::SendClient2VNC( "
 					"tid : %d, "
-					"[外部服务(VNC), 发送命令, 开始新会话], "
+					"[外部服务(VNC), 发送命令到VNC, 开始新会话], "
 					"client->fd : [%d], "
 					"session : %p "
 					")",
@@ -561,45 +561,50 @@ bool TcpProxyServer::ReturnVNC2Client(
 					seq
 					);
 
-			ITask* task = session->EraseRequestTask(cmd->header.seq);
+			ITask* task = session->FindRequestTask(cmd->header.seq);
 			if( task != NULL ) {
 				// 会话中存在对应的命令号
-				LogManager::GetLogManager()->Log(
-						LOG_MSG,
-						"TcpProxyServer::ReturnVNC2Client( "
-						"tid : %d, "
-						"[内部服务(HTTP), 返回数据到客户端, 会话中存在对应的命令号], "
-						"session->client->fd : [%d], "
-						"task : %p "
-						")",
-						(int)syscall(SYS_gettid),
-						session->client->fd,
-						task
-						);
+//				LogManager::GetLogManager()->Log(
+//						LOG_MSG,
+//						"TcpProxyServer::ReturnVNC2Client( "
+//						"tid : %d, "
+//						"[内部服务(HTTP), 返回数据到客户端, 会话中存在对应的命令号], "
+//						"session->client->fd : [%d], "
+//						"task : %p "
+//						")",
+//						(int)syscall(SYS_gettid),
+//						session->client->fd,
+//						task
+//						);
 
 				Message* sm = mClientTcpServer.GetIdleMessageList()->PopFront();
 				if( sm != NULL ) {
-					char buffer[MAX_BUFFER_LEN] = {'\0'};
-					int len;
-					task->GetReturnData(cmd, buffer, len);
-
-					snprintf(
-							sm->buffer,
-							MAX_BUFFER_LEN - 1,
-							"%s",
-							buffer
-							);
-
 					sm->fd = session->client->fd;
-					sm->len = strlen(sm->buffer);
+
+					int len;
+					task->GetReturnData(cmd, sm->buffer, sm->len);
+
+					LogManager::GetLogManager()->Log(
+							LOG_MSG,
+							"TcpProxyServer::ReturnVNC2Client( "
+							"tid : %d, "
+							"[内部服务(HTTP), 返回数据到客户端, 会话中存在对应的命令号], "
+							"session->client->fd : [%d], "
+							"buffer( len : %d ) : \n%s\n"
+							")",
+							(int)syscall(SYS_gettid),
+							session->client->fd,
+							sm->len,
+							sm->buffer
+							);
 
 					mClientTcpServer.SendMessageByQueue(sm);
 
 					bFlag = true;
 				}
 
-				delete task;
-				task = NULL;
+//				delete task;
+//				task = NULL;
 
 			} else {
 				LogManager::GetLogManager()->Log(
@@ -711,12 +716,15 @@ void TcpProxyServer::OnParseCmd(Client* client, CMD* cmd) {
 					LOG_MSG,
 					"TcpProxyServer::OnParseCmd( "
 					"tid : %d, "
-					"[外部服务(VNC), 返回代理请求], "
+					"[外部服务(VNC), 返回命令], "
 					"fd : [%d], "
-					"cmd->param : \n%s\n"
+					"cmd->header.cmdt : %d, "
+					"cmd->param( len : %d ) : \n%s\n"
 					")",
 					(int)syscall(SYS_gettid),
-					client->fd,
+					cmd->header.fd,
+					cmd->header.cmdt,
+					cmd->header.len,
 					cmd->param
 					);
 
@@ -774,7 +782,7 @@ int TcpProxyServer::HandleRecvMessage(TcpServer *ts, Message *m) {
 					LOG_MSG,
 					"TcpProxyServer::HandleRecvMessage( "
 					"tid : %d, "
-					"[内部服务(HTTP), 发起请求], "
+					"[内部服务(HTTP), 客户端发起请求], "
 					"fd : [%d], "
 					"buffer : [\n%s\n]"
 					")",

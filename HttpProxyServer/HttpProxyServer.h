@@ -10,12 +10,15 @@
 
 #include "TcpProxyClient.h"
 #include "DataHttpParser.h"
+#include "HttpRequest.h"
 
 #include <common/KSafeMap.h>
 
+#include <curl/curl.h>
+
 typedef KSafeMap<int, DataHttpParser*> DataHttpParserMap;
 
-class HttpProxyServer : public TcpProxyClientCallback {
+class HttpProxyServer : public TcpProxyClientCallback, public IHttpRequestCallback {
 public:
 	HttpProxyServer();
 	virtual ~HttpProxyServer();
@@ -23,6 +26,10 @@ public:
 	bool Run();
 
 private:
+
+	void onSuccess(HttpRequest* request, const char* buf, int size);
+	void onFail(HttpRequest* request);
+	void onReceiveBody(HttpRequest* request, const char* buf, int size);
 
 	/**
 	 * Implement from TcpProxyClientCallback

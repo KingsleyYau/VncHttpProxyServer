@@ -95,14 +95,14 @@ void TcpProxyClient::HandleTcpProxyClientRunnable() {
 	int seq = 0;
 
 	while( mbRunning ) {
-		printf("TcpProxyClient::HandleTcpProxyClientRunnable( 等待连接服务端 ) \n");
+		printf("# TcpProxyClient::HandleTcpProxyClientRunnable( 等待连接服务端 ) \n");
 
 		if( ConnectServer() ) {
 			if( mpTcpProxyClientCallback != NULL ) {
 				mpTcpProxyClientCallback->OnConnected(this);
 			}
 
-			printf("TcpProxyClient::HandleTcpProxyClientRunnable( 已经连接上服务端 ) \n");
+			printf("# TcpProxyClient::HandleTcpProxyClientRunnable( 已经连接上服务端 ) \n");
 			// 连接上服务端
 			bool bCanRecv = true;
 			while(bCanRecv) {
@@ -114,7 +114,7 @@ void TcpProxyClient::HandleTcpProxyClientRunnable() {
 
 				} else {
 					// 与服务端连接已经断开
-					printf("TcpProxyClient::HandleTcpProxyClientRunnable( 与服务端连接已经断开 ) \n");
+					printf("# TcpProxyClient::HandleTcpProxyClientRunnable( 与服务端连接已经断开 ) \n");
 
 					if( mpTcpProxyClientCallback != NULL ) {
 						mpTcpProxyClientCallback->OnDisConnected(this);
@@ -155,7 +155,7 @@ bool TcpProxyClient::RecvCommand(CMD &cmd) {
 	}
 
 	printf(
-			"TcpProxyClient::RecvCommand( "
+			"# TcpProxyClient::RecvCommand( "
 			"cmd.header.cmdt : %d, "
 			"cmd.header.seq : %d, "
 			"cmd.header.fd : %d, "
@@ -181,6 +181,11 @@ void TcpProxyClient::OnRecvCommand(const CMD &cmd) {
 		HandleRecvProxyBuffer(cmd);
 
 	}break;
+	case CommandTypeProxyDisconnect:{
+		// 解析代理断开连接
+		HandleRecvProxyDisconnect(cmd);
+
+	}break;
 	case CommandTypeNone:{
 		// 与服务端连接已经断开
 
@@ -190,14 +195,14 @@ void TcpProxyClient::OnRecvCommand(const CMD &cmd) {
 }
 
 void TcpProxyClient::HandleRecvProxyBuffer(const CMD &cmd) {
-	printf("TcpProxyClient::HandleRecvProxyBuffer( [收到命令:代理Http请求] ) \n");
+	printf("# TcpProxyClient::HandleRecvProxyBuffer( [收到命令:代理Http请求] ) \n");
 	if( mpTcpProxyClientCallback != NULL ) {
 		mpTcpProxyClientCallback->OnRecvProxyBuffer(this, cmd.header.seq, cmd.header.fd, cmd.param, cmd.header.len);
 	}
 }
 
 void TcpProxyClient::HandleRecvProxyDisconnect(const CMD &cmd) {
-	printf("TcpProxyClient::OnRecvProxyDisconnect( [收到命令:代理断开请求] ) \n");
+	printf("# TcpProxyClient::OnRecvProxyDisconnect( [收到命令:代理断开请求] ) \n");
 	if( mpTcpProxyClientCallback != NULL ) {
 		mpTcpProxyClientCallback->OnRecvProxyDisconnect(this, cmd.header.seq, cmd.header.fd);
 	}
@@ -209,10 +214,25 @@ bool TcpProxyClient::SendProxyBuffer(int seq, int fd, const char* buffer, int le
 	cmd.header.bNew = false;
 	cmd.header.seq = seq;
 	cmd.header.fd = fd;
-	cmd.header.len = MIN(len, MAX_PARAM_LEN - 1);
-	memcpy(cmd.param, buffer, cmd.header.len);
-	cmd.param[cmd.header.len] = '\0';
-	return SendCommand(cmd);
+
+	bool bFlag = true;
+	int sent = 0;
+	int send = 0;
+	int last = len;
+	while( last > 0 && bFlag ) {
+		send = MIN(last, MAX_PARAM_LEN - 1);
+
+		cmd.header.len = send;
+		memcpy(cmd.param, buffer + sent, cmd.header.len);
+		cmd.param[cmd.header.len] = '\0';
+
+		sent += send;
+		last -= send;
+
+		bFlag = SendCommand(cmd);
+	}
+
+	return bFlag;
 }
 
 /**
@@ -234,7 +254,7 @@ bool TcpProxyClient::SendProxyDisconnect(int fd) {
 bool TcpProxyClient::SendCommand(const CMD &cmd) {
 	bool bFlag = false;
 
-	printf("TcpProxyClient::SendCommand( "
+	printf("# TcpProxyClient::SendCommand( "
 			"cmd.header.cmdt : %d, "
 			"cmd.header.seq : %d, "
 			"cmd.header.fd : %d, "

@@ -17,52 +17,142 @@ DataHttpParser::~DataHttpParser() {
 }
 
 void DataHttpParser::Reset() {
+	mbReceiveHeaderFinish = false;
 	miContentLength = -1;
-	mHttpType = UNKNOW;
-	miSendMaxSeq = -1;
-	mPath = "";
-	mParameters.clear();
+	mIndex = 0;
+	mHeaderIndex = 0;
+	memset(mBuffer, '\0', sizeof(mBuffer));
 }
 
-int DataHttpParser::ParseData(char* buffer, int len) {
-	int result = 0;
+int DataHttpParser::ParseData(const char* buffer, int len) {
+	int ret = 0;
 
-	int recvLen = (len < MAX_BUFFER_LEN - mFirstLineIndex)?len:MAX_BUFFER_LEN - mFirstLineIndex;
+	int recvLen = (len < MAX_BUFFER_LEN - mIndex)?len:MAX_BUFFER_LEN - mIndex;
 	if( recvLen > 0 ) {
 		memcpy(mBuffer + mIndex, buffer, recvLen);
 		mIndex += recvLen;
 		mBuffer[mIndex + 1] = '\0';
+
+	} else {
+		return -1;
 	}
 
-	if( !mbReceiveFirstLineFinish ) {
-		if( ParseFirstLine(buffer) ) {
-			mbReceiveFirstLineFinish = true;
+	printf("# DataHttpParser::ParseData( mbReceiveHeaderFinish : %s ) \n", mbReceiveHeaderFinish?"true":"false");
+
+	if( !mbReceiveHeaderFinish ) {
+		string headers = mBuffer;
+		int headerIndex = 0;
+		string::size_type pos = headers.find("\r\n\r\n");
+
+		if( pos != string::npos ) {
+			headerIndex = pos + strlen("\r\n\r\n");
+
+			mbReceiveHeaderFinish = true;
+
+			// Read first line
+			pos = headers.find("\r\n");
+			if( pos!= string::npos ) {
+				string firstLine = headers.substr(0, pos);
+				printf("# DataHttpParser::ParseData( firstLine : %s ) \n", firstLine.c_str());
+				char firstLineBuff[1024];
+				memcpy(firstLineBuff, firstLine.c_str(), firstLine.length());
+
+				headers = headers.substr(pos + strlen("\r\n"), headers.length() - (pos + strlen("\r\n")));
+				if( ParseFirstLine(firstLineBuff) ) {
+					string header;
+					string::size_type posStart, posEnd;
+					string::size_type posPre = 0;
+
+					// Get all headers
+					pos = headers.find("\r\n", 0);
+					while( pos!= string::npos ) {
+						header = headers.substr(posPre, pos - posPre);
+						printf("# DataHttpParser::ParseData( header : %s ) \n", header.c_str());
+
+						if( header.length() > 0 ) {
+							// Get Host
+							posStart = header.find("Host: ");
+							if( posStart != string::npos ) {
+								mHost = header.substr(posStart + strlen("Host: "), header.length() - (posStart + strlen("Host:")));
+								printf("# DataHttpParser::ParseData( Host: %s ) \n", mHost.c_str());
+							}
+
+							// Get Content-Length
+							posStart = header.find("Content-Length: ");
+							if( posStart != string::npos ) {
+								string contentLength = header.substr(posStart + strlen("Content-Length: "), header.length() - (posStart + strlen("Content-Length:")));
+								printf("# DataHttpParser::ParseData( Content-Length: %s ) \n", contentLength.c_str());
+								miContentLength = atoi(contentLength.c_str());
+							}
+
+							mHeaders.push_back(header);
+						}
+
+						posPre = pos + strlen("\r\n");
+						pos = headers.find("\r\n", posPre);
+					}
+				}
+			}
+
+			if( mIndex > headerIndex ) {
+				memcpy(mBuffer, mBuffer + headerIndex, mIndex - headerIndex);
+
+			} else {
+				mBuffer[0] = '\0';
+				mIndex = 0;
+
+			}
 		}
 	}
 
-	return result;
-}
-
-const string& DataHttpParser::GetParam(const char* key) {
-	string result = "";
-	Parameters::iterator itr = mParameters.find(key);
-	if( itr != mParameters.end() ) {
-		result = (itr->second);
+	// Receive all body
+	if( mbReceiveHeaderFinish ) {
+		if( miContentLength == -1 || (mIndex == miContentLength) ) {
+			ret = 1;
+		}
 	}
-	return result;
+
+	return ret;
 }
 
-const string& DataHttpParser::GetPath() {
-	return mPath;
+string DataHttpParser::GetUrl() {
+	string url = "";
+
+	if( mHost.length() != 0 ) {
+		if( string::npos == mPath.find(mHost) ) {
+			url += mHost;
+			url += mPath;
+
+		} else {
+			url += mPath;
+
+		}
+
+	} else {
+		url += mPath;
+	}
+
+	if( string::npos == url.find("http://") ) {
+		url = "http://" + url;
+	}
+
+	return url;
 }
 
-HttpType DataHttpParser::GetType() {
-	return mHttpType;
+const char* DataHttpParser::GetBody() {
+	return mBuffer;
+}
+
+int DataHttpParser::GetContentLength() {
+	return miContentLength;
+}
+
+const Headers& DataHttpParser::GetHeaders() {
+	return mHeaders;
 }
 
 bool DataHttpParser::ParseFirstLine(char* buffer) {
 	bool bFlag = true;
-	char temp[1024];
 	char* p = NULL;
 	int j = 0;
 
@@ -84,21 +174,13 @@ bool DataHttpParser::ParseFirstLine(char* buffer) {
 		}break;
 		case 1:{
 			// path and parameters
-			char path[1025] = {'\0'};
-			Arithmetic ari;
-			int len = strlen(p);
-			len = ari.decode_url(p, len, temp);
-			char* pPath = strstr(temp, "?");
-			if( pPath != NULL && ((pPath + 1) != NULL) ) {
-				len = pPath - temp;
-				memcpy(path, temp, len);
-				ParseParameters(pPath + 1);
-			} else {
-				memcpy(path, temp, len);
+			mPath = p;
+			string::size_type pos = mPath.find("http://");
+			if( string::npos != pos ) {
+				mPath = mPath.substr(pos + strlen("http://"), mPath.length() - (pos + strlen("http://")));
 			}
-			path[len] = '\0';
-			mPath = path + 1;
-//			transform(mPath.begin(), mPath.end(), mPath.begin(), ::toupper);
+			printf("# DataHttpParser::ParseFirstLine( mPath : %s ) \n", mPath.c_str());
+
 		}break;
 		default:break;
 		};
@@ -106,77 +188,6 @@ bool DataHttpParser::ParseFirstLine(char* buffer) {
 		j++;
 		p = strtok_r(NULL, " ", &pFirst);
 	}
-
-	return bFlag;
-}
-
-void DataHttpParser::ParseParameters(char* buffer) {
-	char* p = NULL;
-	char* param = NULL;
-	string key;
-	string value;
-//	int j = 0;
-
-	char *pFirst = NULL;
-//	char *pSecond = NULL;
-
-	param = strtok_r(buffer, "&", &pFirst);
-	while( param != NULL ) {
-		p = strstr(param, "=");
-		if( p != NULL && ((p + 1) != NULL) ) {
-			*p = '\0';
-			// key
-			key = param;
-			transform(key.begin(), key.end(), key.begin(), ::toupper);
-
-			// value
-			value = p + 1;
-			mParameters.insert(Parameters::value_type(key, value));
-		} else {
-			// key
-			key = p;
-			transform(key.begin(), key.end(), key.begin(), ::toupper);
-		}
-
-//		j = 0;
-//		p = strtok_r(param, "=", &pSecond);
-//		while( p != NULL ) {
-//			switch(j) {
-//			case 0:{
-//				// key
-//				key = p;
-//				transform(key.begin(), key.end(), key.begin(), ::toupper);
-//			}break;
-//			case 1:{
-//				// value
-//				value = p;
-////				transform(value.begin(), value.end(), value.begin(), ::toupper);
-//				mParameters.insert(Parameters::value_type(key, value));
-//			}break;
-//			default:break;
-//			};
-//
-//			j++;
-//			p = strtok_r(NULL, "=", &pSecond);
-//		}
-		param = strtok_r(NULL, "&", &pFirst);
-	}
-}
-
-void DataHttpParser::SetSendMaxSeq(int seq) {
-	mSeqMutex.lock();
-	miSendMaxSeq = seq;
-	mSeqMutex.unlock();
-}
-
-bool DataHttpParser::IsFinishSeq(int seq) {
-	bool bFlag = false;
-
-	mSeqMutex.lock();
-	if( miSendMaxSeq == seq ) {
-		bFlag = true;
-	}
-	mSeqMutex.unlock();
 
 	return bFlag;
 }

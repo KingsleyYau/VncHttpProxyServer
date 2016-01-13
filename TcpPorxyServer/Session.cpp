@@ -32,6 +32,15 @@ bool Session::InsertRequestTask(int seq, ITask* task) {
 	return bFlag;
 }
 
+ITask* Session::FindRequestTask(int seq) {
+	ITask* task = NULL;
+	TaskMap::iterator itr = mRequestTaskMap.find(seq);
+	if( itr != mRequestTaskMap.end() ) {
+		task = itr->second;
+	}
+	return task;
+}
+
 ITask* Session::EraseRequestTask(int seq) {
 	ITask* task = NULL;
 	TaskMap::iterator itr = mRequestTaskMap.find(seq);
