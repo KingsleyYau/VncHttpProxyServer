@@ -302,18 +302,22 @@ void TcpProxyServer::OnDisconnect(TcpServer *ts, int fd) {
 		mClientMap.Unlock();
 
 	} else if( ts == &mClientTcpVNCServer ) {
-		LogManager::GetLogManager()->Log(
-				LOG_MSG,
-				"TcpProxyServer::OnDisconnect( "
-				"tid : %d, "
-				"fd : [%d], "
-				"[外部服务(VNC), 断开连接] "
-				")",
-				(int)syscall(SYS_gettid),
-				fd
-				);
+		if( mpVNCClient != NULL && mpVNCClient->fd == fd ) {
+			LogManager::GetLogManager()->Log(
+					LOG_MSG,
+					"TcpProxyServer::OnDisconnect( "
+					"tid : %d, "
+					"fd : [%d], "
+					"[外部服务(VNC), 断开连接] "
+					")",
+					(int)syscall(SYS_gettid),
+					fd
+					);
 
-		CloseSessionByVNC();
+			mpVNCClient->isOnline = false;
+
+			CloseSessionByVNC();
+		}
 
 	}
 
@@ -355,7 +359,7 @@ void TcpProxyServer::OnClose(TcpServer *ts, int fd) {
 				fd
 				);
 
-		if( mpVNCClient != NULL ) {
+		if( mpVNCClient != NULL && mpVNCClient->fd == fd ) {
 			delete mpVNCClient;
 			mpVNCClient = NULL;
 		}
