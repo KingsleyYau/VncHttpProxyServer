@@ -124,12 +124,11 @@ bool LogManager::Log(LOG_LEVEL nLevel, const char *format, ...) {
             g_pFileCtrl->OpenLogFile();
 	    }
 
-//        Message *lm = mIdleMessageList.PopFront();
-//        if( lm != NULL ) {
-//            lm->Reset();
+        Message *lm = mIdleMessageList.PopFront();
+        if( lm != NULL ) {
+            lm->Reset();
 
-        char bitBuffer[64];
-        char buffer[MAX_LOG_BUFFER_LEN];
+			char bitBuffer[64];
 
     	    //get current time
     	    time_t stm = time(NULL);
@@ -140,14 +139,14 @@ bool LogManager::Log(LOG_LEVEL nLevel, const char *format, ...) {
             //get va_list
             va_list	agList;
             va_start(agList, format);
-            vsnprintf(buffer, MAX_LOG_BUFFER_LEN - 1, format, agList);
+            vsnprintf(lm->buffer, MAX_LOG_BUFFER_LEN - 1, format, agList);
             va_end(agList);
 
-            strcat(buffer, "\n");
-            g_pFileCtrl->LogMsg(buffer, (int)strlen(buffer), bitBuffer);
+            strcat(lm->buffer, "\n");
+            g_pFileCtrl->LogMsg(lm->buffer, (int)strlen(lm->buffer), bitBuffer);
 
-//            mIdleMessageList.PushBack(lm);
-//        }
+            mIdleMessageList.PushBack(lm);
+        }
 
         return true;
     }
@@ -157,10 +156,10 @@ bool LogManager::Log(LOG_LEVEL nLevel, const char *format, ...) {
 
 bool LogManager::Start(int maxIdle, LOG_LEVEL nLevel, const string& dir) {
 	/* create log buffers */
-//	for(int i = 0; i < maxIdle; i++) {
-//		Message *m = new Message();
-//		mIdleMessageList.PushBack(m);
-//	}
+	for(int i = 0; i < maxIdle; i++) {
+		Message *m = new Message();
+		mIdleMessageList.PushBack(m);
+	}
 
 	mIsRunning = true;
 
@@ -197,9 +196,9 @@ bool LogManager::Stop() {
 //		delete m;
 //	}
 
-//	while( NULL != ( m = mIdleMessageList.PopFront() ) ) {
-//		delete m;
-//	}
+	while( NULL != ( m = mIdleMessageList.PopFront() ) ) {
+		delete m;
+	}
 
 	return true;
 }

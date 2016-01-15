@@ -122,7 +122,7 @@ void HttpProxyServer::onFail(HttpRequest* request) {
 }
 
 void HttpProxyServer::onReceiveBody(HttpRequest* request, const char* buf, int size) {
-	printf("# HttpProxyServer::onReceiveBody( request : %p ) \n", request);
+//	printf("# HttpProxyServer::onReceiveBody( request : %p ) \n", request);
 
 	// 返回代理请求
 	bool bFlag = mTcpProxyClient.SendProxyBuffer(request->GetSeq(), request->Getfd(), buf, size);

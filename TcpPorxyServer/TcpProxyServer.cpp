@@ -107,6 +107,15 @@ void TcpProxyServer::Run() {
 			mLogDir.c_str()
 			);
 
+	/**
+	 * 客户端缓存buffer
+	 */
+	for(int i = 0; i < miMaxClient; i++) {
+		/* create idle buffers */
+		Message *m = new Message();
+		mIdleMessageList.PushBack(m);
+	}
+
 	/* client server */
 	/**
 	 * 预估相应时间, 内存数目*超时间隔*每秒处理的任务
@@ -122,7 +131,7 @@ void TcpProxyServer::Run() {
 	 * 预估相应时间, 内存数目*超时间隔*每秒处理的任务
 	 */
 	mClientTcpVNCServer.SetHandleSize(miTimeout * miMaxQueryPerThread);
-	mClientTcpVNCServer.Start(miMaxClient, miPort + 1, miMaxHandleThread);
+	mClientTcpVNCServer.Start(2, miPort + 1, miMaxHandleThread);
 	LogManager::GetLogManager()->Log(LOG_STAT, "TcpProxyServer::Run( Inside TcpServer Init OK )");
 
 	mIsRunning = true;
@@ -203,6 +212,7 @@ bool TcpProxyServer::OnAccept(TcpServer *ts, int fd, char* ip) {
 	if( ts == &mClientTcpServer ) {
 		Client *client = new Client();
 		client->SetClientCallback(this);
+		client->SetMessageList(&mIdleMessageList);
 		client->fd = fd;
 		client->ip = ip;
 		client->isOnline = true;
@@ -237,6 +247,7 @@ bool TcpProxyServer::OnAccept(TcpServer *ts, int fd, char* ip) {
 
 			mpVNCClient = new Client();
 			mpVNCClient->SetClientCallback(this);
+			mpVNCClient->SetMessageList(&mIdleMessageList);
 			mpVNCClient->fd = fd;
 			mpVNCClient->ip = ip;
 			mpVNCClient->isOnline = true;
@@ -477,8 +488,9 @@ bool TcpProxyServer::SendClient2VNC(
 
 	Message* sm = mClientTcpVNCServer.GetIdleMessageList()->PopFront();
 	if( sm != NULL ) {
-		Session* session = NULL;
+		int seq = mpVNCClient->AddSeq();
 
+		Session* session = NULL;
 		mClient2SessionMap.Lock();
 		Client2SessionMap::iterator itr = mClient2SessionMap.Find(client->fd);
 		if( itr != mClient2SessionMap.End() ) {
@@ -489,11 +501,11 @@ bool TcpProxyServer::SendClient2VNC(
 					"tid : %d, "
 					"[外部服务(VNC), 发送命令到VNC, 继续会话], "
 					"client->fd : [%d], "
-					"session : %p "
+					"seq : %d "
 					")",
 					(int)syscall(SYS_gettid),
 					client->fd,
-					session
+					seq
 					);
 
 		} else {
@@ -505,15 +517,14 @@ bool TcpProxyServer::SendClient2VNC(
 					"tid : %d, "
 					"[外部服务(VNC), 发送命令到VNC, 开始新会话], "
 					"client->fd : [%d], "
-					"session : %p "
+					"seq : %d "
 					")",
 					(int)syscall(SYS_gettid),
 					client->fd,
-					session
+					seq
 					);
 		}
 
-		int seq = mpVNCClient->AddSeq();
 		if( needReturn ) {
 			session->InsertRequestTask(seq, task);
 		}
@@ -545,20 +556,17 @@ bool TcpProxyServer::ReturnVNC2Client(
 		// 内部服务(HTTP), 客户端在会话中
 		Session* session = itr->second;
 		if( session != NULL ) {
-			int seq = cmd->header.seq;
 			LogManager::GetLogManager()->Log(
 					LOG_MSG,
 					"TcpProxyServer::ReturnVNC2Client( "
 					"tid : %d, "
 					"[内部服务(HTTP), 返回数据到客户端, 客户端在会话中], "
-					"client->fd : [%d], "
-					"session : %p, "
-					"seq : %d "
+					"cmd->header.fd : [%d], "
+					"cmd->header.seq : %d "
 					")",
 					(int)syscall(SYS_gettid),
-					session->client->fd,
-					session,
-					seq
+					cmd->header.fd,
+					cmd->header.seq
 					);
 
 			ITask* task = session->FindRequestTask(cmd->header.seq);
@@ -580,8 +588,6 @@ bool TcpProxyServer::ReturnVNC2Client(
 				Message* sm = mClientTcpServer.GetIdleMessageList()->PopFront();
 				if( sm != NULL ) {
 					sm->fd = session->client->fd;
-
-					int len;
 					task->GetReturnData(cmd, sm->buffer, sm->len);
 
 					LogManager::GetLogManager()->Log(
@@ -624,10 +630,12 @@ bool TcpProxyServer::ReturnVNC2Client(
 					LOG_MSG,
 					"TcpProxyServer::ReturnVNC2Client( "
 					"tid : %d, "
-					"cmd->header.seq : %d, "
-					"[内部服务(HTTP), 返回数据到客户端, 客户端不在会话中] "
+					"[内部服务(HTTP), 返回数据到客户端, 客户端不在会话中], "
+					"cmd->header.fd : [%d], "
+					"cmd->header.seq : %d "
 					")",
 					(int)syscall(SYS_gettid),
+					cmd->header.fd,
 					cmd->header.seq
 					);
 		}
@@ -719,13 +727,12 @@ void TcpProxyServer::OnParseCmd(Client* client, CMD* cmd) {
 					"[外部服务(VNC), 返回命令], "
 					"fd : [%d], "
 					"cmd->header.cmdt : %d, "
-					"cmd->param( len : %d ) : \n%s\n"
+					"cmd->param( len : %d ) "
 					")",
 					(int)syscall(SYS_gettid),
 					cmd->header.fd,
 					cmd->header.cmdt,
-					cmd->header.len,
-					cmd->param
+					cmd->header.len
 					);
 
 			switch(cmd->header.cmdt) {

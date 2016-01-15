@@ -172,6 +172,12 @@ private:
 	 * 外部服务(VNC)
 	 */
 	Client* mpVNCClient;
+
+	/**
+	 * 客户端缓存数据包buffer
+	 */
+	MessageList mIdleMessageList;
+
 };
 
 #endif /* TCPPROXYSERVER_H_ */

@@ -35,6 +35,7 @@ public:
 	virtual ~Client();
 
 	void SetClientCallback(ClientCallback* pClientCallback);
+	void SetMessageList(MessageList*);
 
 	/**
 	 * 解析数据
@@ -80,9 +81,13 @@ private:
      */
     int miDataPacketRecvSeq;
 
-	MessageList mIdleMessageList;
+	MessageList* mpIdleMessageList;
 	MessageMap mMessageMap;
 
+	/**
+	 * 已经解析错误标记
+	 */
+	bool mbError;
 };
 
 #endif /* CLIENT_H_ */

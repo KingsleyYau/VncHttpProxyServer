@@ -95,7 +95,7 @@ void TcpProxyClient::HandleTcpProxyClientRunnable() {
 	int seq = 0;
 
 	while( mbRunning ) {
-		printf("# TcpProxyClient::HandleTcpProxyClientRunnable( 等待连接服务端 ) \n");
+		printf("# TcpProxyClient::HandleTcpProxyClientRunnable( 等待连接服务端... ) \n");
 
 		if( ConnectServer() ) {
 			if( mpTcpProxyClientCallback != NULL ) {
@@ -107,6 +107,7 @@ void TcpProxyClient::HandleTcpProxyClientRunnable() {
 			bool bCanRecv = true;
 			while(bCanRecv) {
 				// 开始接收命令
+				printf("# TcpProxyClient::HandleTcpProxyClientRunnable( 等待服务端命令... ) \n");
 				CMD cmd;
 				bCanRecv = RecvCommand(cmd);
 				if( bCanRecv ) {
@@ -259,15 +260,15 @@ bool TcpProxyClient::SendCommand(const CMD &cmd) {
 			"cmd.header.seq : %d, "
 			"cmd.header.fd : %d, "
 			"cmd.header.bNew : %s, "
-			"cmd.header.len : %d, "
-			"cmd.param : \n%s\n"
+			"cmd.header.len : %d "
+//			"cmd.param : \n%s\n"
 			")\n",
 			cmd.header.cmdt,
 			cmd.header.seq,
 			cmd.header.fd,
 			cmd.header.bNew?"true":"false",
-			cmd.header.len,
-			cmd.param
+			cmd.header.len
+//			cmd.param
 			);
 
 	// 发送命令

@@ -449,7 +449,7 @@ bool TcpServer::Start(int maxConnection, int port, int maxThreadHandle) {
 	}
 	LogManager::GetLogManager()->Log(LOG_STAT, "TcpServer::Start( Create watchers ok, mWatcherList : %d )", mWatcherList.Size());
 
-	for(int i = 0; i < maxConnection; i++) {
+	for(int i = 0; i < 10000; i++) {
 		/* create idle buffers */
 		Message *m = new Message();
 		mIdleMessageList.PushBack(m);
@@ -1242,10 +1242,12 @@ void TcpServer::OnRecvMessage(Message *m) {
 			"TcpServer::OnRecvMessage( "
 			"tid : %d, "
 			"m->fd : [%d], "
-			"buffer( len : %d ) "
+			"m->seq : %d, "
+			"len : %d "
 			")",
 			(int)syscall(SYS_gettid),
 			m->fd,
+			m->seq,
 			m->len
 			);
 
@@ -1255,11 +1257,12 @@ void TcpServer::OnRecvMessage(Message *m) {
 			"TcpServer::OnRecvMessage( "
 			"tid : %d, "
 			"m->fd : [%d], "
-			"buffer( len : %d ) : [\n%s\n] "
+			"m->seq : %d, "
+			"buffer : [\n%s\n] "
 			")",
 			(int)syscall(SYS_gettid),
 			m->fd,
-			m->len,
+			m->seq,
 			ari.AsciiToHexWithSep(m->buffer, m->len).c_str()
 			);
 
