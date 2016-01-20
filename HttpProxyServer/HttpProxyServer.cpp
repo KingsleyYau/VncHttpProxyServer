@@ -49,7 +49,7 @@ void HttpProxyServer::OnRecvProxyBuffer(TcpProxyClient* client, int seq, int fd,
 //	}
 
 	int ret = pDataHttpParser->ParseData(buffer, len);
-	printf("# HttpProxyServer::OnRecvProxyBuffer( pDataHttpParser->ParseData( ret : %d ) ) \n", ret);
+//	printf("# HttpProxyServer::OnRecvProxyBuffer( pDataHttpParser->ParseData( ret : %d ) ) \n", ret);
 	if( ret == 1 ) {
 		HttpRequest* request = new HttpRequest;
 		request->SetCallback(this);
@@ -68,7 +68,7 @@ void HttpProxyServer::OnRecvProxyBuffer(TcpProxyClient* client, int seq, int fd,
 }
 
 void HttpProxyServer::OnRecvProxyDisconnect(TcpProxyClient* client, int seq, int fd) {
-	printf("# HttpProxyServer::OnRecvProxyDisconnect( fd : %d, seq : %d ) \n", fd, seq);
+//	printf("# HttpProxyServer::OnRecvProxyDisconnect( fd : %d, seq : %d ) \n", fd, seq);
 
 	mDataHttpParserMap.Lock();
 	DataHttpParserMap::iterator itr = mDataHttpParserMap.Find(fd);
@@ -86,6 +86,10 @@ void HttpProxyServer::OnRecvProxyDisconnect(TcpProxyClient* client, int seq, int
 bool HttpProxyServer::Run() {
 	bool bFlag = false;
 
+//	LogManager::LogSetFlushBuffer(0);
+	LogManager::LogSetFlushBuffer(5 * BUFFER_SIZE_1K * BUFFER_SIZE_1K);
+	LogManager::GetLogManager()->Start(1000, LOG_STAT, "./log");
+
 	mTcpProxyClient.SetTcpProxyClientCallback(this);
 	bFlag = mTcpProxyClient.Start();
 
@@ -93,7 +97,7 @@ bool HttpProxyServer::Run() {
 }
 
 void HttpProxyServer::onSuccess(HttpRequest* request, const char* buf, int size) {
-	printf("# HttpProxyServer::onSuccess( request : %p ) \n", request);
+//	printf("# HttpProxyServer::onSuccess( request : %p ) \n", request);
 
 	mDataHttpParserMap.Lock();
 	DataHttpParserMap::iterator itr = mDataHttpParserMap.Find(request->Getfd());
@@ -108,7 +112,7 @@ void HttpProxyServer::onSuccess(HttpRequest* request, const char* buf, int size)
 }
 
 void HttpProxyServer::onFail(HttpRequest* request) {
-	printf("# HttpProxyServer::onFail( request : %p ) \n", request);
+//	printf("# HttpProxyServer::onFail( request : %p ) \n", request);
 	mDataHttpParserMap.Lock();
 	DataHttpParserMap::iterator itr = mDataHttpParserMap.Find(request->Getfd());
 	if( itr != mDataHttpParserMap.End() ) {

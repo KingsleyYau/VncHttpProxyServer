@@ -7,7 +7,7 @@
  */
 
 #include "HttpClient.h"
-
+#include "LogManager.h"
 #include <common/KMutex.h>
 
 #define DWONLOAD_TIMEOUT 30
@@ -47,14 +47,13 @@ void HttpClient::SetCallback(IHttpClientCallback *callback){
 }
 
 void HttpClient::Stop() {
-	printf("# HttpClient::Stop( this : %p ) \n", this);
+//	printf("# HttpClient::Stop( this : %p ) \n", this);
 
 	mUrl = "";
 	mbStop = true;
 }
 
 bool HttpClient::Request(const string& url, const list<string> headers) {
-	printf("# HttpClient::Request( this : %p, url : %s ) \n", this, url.c_str());
 	bool bFlag = true;
 
 	CURLcode res;
@@ -78,7 +77,10 @@ bool HttpClient::Request(const string& url, const list<string> headers) {
 
 	curl_easy_setopt(mpCURL, CURLOPT_URL, url.c_str());
 
+	curl_easy_setopt(mpCURL, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+
 	curl_easy_setopt(mpCURL, CURLOPT_HEADER, 1L);
+
 
 	// 处理send
 	curl_easy_setopt(mpCURL, CURLOPT_READFUNCTION, CurlReadHandle);
@@ -107,9 +109,20 @@ bool HttpClient::Request(const string& url, const list<string> headers) {
 		string header = *itr;
 		pList = curl_slist_append(pList, header.c_str());
 //		printf("# HttpClient::Request( Add header : [%s] ) \n", header.c_str());
+//		LogManager::GetLogManager()->Log(
+//				LOG_MSG,
+//				"HttpClient::Request( "
+//				"Add header : [%s] "
+//				")",
+//				header.c_str()
+//				);
 	}
 
-	printf("# HttpClient::Request( this : %p, curl_easy_perform ) \n", this);
+	if( pList != NULL ) {
+		curl_easy_setopt(mpCURL, CURLOPT_HTTPHEADER, pList);
+	}
+
+//	printf("# HttpClient::Request( this : %p, curl_easy_perform ) \n", this);
 	res = curl_easy_perform(mpCURL);
 
 	double totalTime = 0;
@@ -126,7 +139,16 @@ bool HttpClient::Request(const string& url, const list<string> headers) {
 	}
 
 	bFlag = (res == CURLE_OK);
-	printf("# HttpClient::Request( this : %p, bFlag : %s , res : %d ) \n", this, bFlag?"true":"false", res);
+	LogManager::GetLogManager()->Log(
+			LOG_MSG,
+			"HttpClient::Request( "
+			"[http请求完成], "
+			"res : %d, "
+			"url : %s "
+			")",
+			res,
+			url.c_str()
+			);
 
 	return bFlag;
 }
@@ -138,7 +160,7 @@ size_t HttpClient::CurlWriteHandle(void *buffer, size_t size, size_t nmemb, void
 }
 
 void HttpClient::HttpWriteHandle(void *buffer, size_t size, size_t nmemb) {
-	printf("# HttpClient::HttpWriteHandle( this : %p, size : %d , nmemb : %d ) \n", this, (int)size, (int)nmemb);
+//	printf("# HttpClient::HttpWriteHandle( this : %p, size : %d , nmemb : %d ) \n", this, (int)size, (int)nmemb);
 //	if( mContentType.length() == 0 ) {
 //		char *ct = NULL;
 //		CURLcode res = curl_easy_getinfo(mpCURL, CURLINFO_CONTENT_TYPE, &ct);
@@ -167,7 +189,7 @@ size_t HttpClient::CurlReadHandle(void *buffer, size_t size, size_t nmemb, void 
 }
 
 int HttpClient::HttpReadHandle(void *buffer, size_t size, size_t nmemb) {
-	printf("# HttpClient::HttpReadHandle( this : %p, size : %d , nmemb : %d ) \n", this, (int)size, (int)nmemb);
+//	printf("# HttpClient::HttpReadHandle( this : %p, size : %d , nmemb : %d ) \n", this, (int)size, (int)nmemb);
 
 	int len = size * nmemb;
 	if( mpIHttpClientCallback ) {

@@ -195,7 +195,7 @@ void HttpRequest::InitRequestBuffer() {
 	miRequestCurrentSend = 0;
 	miRequestCurrentSize = 0;
 	miRequestCurrentCapacity = MAX_RESPONED_BUFFER;
-	mpRequestBuffer = new char[miCurrentCapacity];
+	mpRequestBuffer = new char[miRequestCurrentCapacity];
 }
 
 bool HttpRequest::AddRequestBuffer(const char* buf, int size) {

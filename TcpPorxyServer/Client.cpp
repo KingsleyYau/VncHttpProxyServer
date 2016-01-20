@@ -205,7 +205,7 @@ int Client::ParseData(Message* m)  {
 	if( ret == -1 ) {
 		if( !mbError ) {
 			LogManager::GetLogManager()->Log(
-					LOG_MSG,
+					LOG_WARNING,
 					"Client::ParseData( "
 					"tid : %d, "
 					"[客户端数据包解析错误] "

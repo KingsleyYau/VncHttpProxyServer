@@ -297,9 +297,19 @@ void TcpProxyServer::OnDisconnect(TcpServer *ts, int fd) {
 			SendClient2VNC(client, (ITask*)task, false);
 			delete task;
 
-			CloseSessionByClient(client);
 		}
 		mClientMap.Unlock();
+
+		LogManager::GetLogManager()->Log(
+				LOG_STAT,
+				"TcpProxyServer::OnDisconnect( "
+				"tid : %d, "
+				"fd : [%d], "
+				"[内部服务(HTTP), 断开连接完成] "
+				")",
+				(int)syscall(SYS_gettid),
+				fd
+				);
 
 	} else if( ts == &mClientTcpVNCServer ) {
 		if( mpVNCClient != NULL && mpVNCClient->fd == fd ) {
@@ -316,7 +326,6 @@ void TcpProxyServer::OnDisconnect(TcpServer *ts, int fd) {
 
 			mpVNCClient->isOnline = false;
 
-			CloseSessionByVNC();
 		}
 
 	}
@@ -325,11 +334,23 @@ void TcpProxyServer::OnDisconnect(TcpServer *ts, int fd) {
 
 void TcpProxyServer::OnClose(TcpServer *ts, int fd) {
 	if( ts == &mClientTcpServer ) {
+		LogManager::GetLogManager()->Log(
+				LOG_MSG,
+				"TcpProxyServer::OnClose( "
+				"tid : %d, "
+				"fd : [%d], "
+				"[内部服务(HTTP), 关闭socket] "
+				")",
+				(int)syscall(SYS_gettid),
+				fd
+				);
+
 		// 释放资源下线
 		mClientMap.Lock();
 		ClientMap::iterator itr = mClientMap.Find(fd);
 		if( itr != mClientMap.End() ) {
 			Client* client = itr->second;
+			CloseSessionByClient(client);
 			delete client;
 
 			mClientMap.Erase(itr);
@@ -337,31 +358,55 @@ void TcpProxyServer::OnClose(TcpServer *ts, int fd) {
 		mClientMap.Unlock();
 
 		LogManager::GetLogManager()->Log(
-				LOG_MSG,
+				LOG_STAT,
 				"TcpProxyServer::OnClose( "
 				"tid : %d, "
 				"fd : [%d], "
-				"[内部服务(HTTP), 所有数据包处理完成] "
+				"[内部服务(HTTP), 关闭socket完成] "
 				")",
 				(int)syscall(SYS_gettid),
 				fd
 				);
 
 	} else if( ts == &mClientTcpVNCServer ) {
-		LogManager::GetLogManager()->Log(
-				LOG_MSG,
-				"TcpProxyServer::OnClose( "
-				"tid : %d, "
-				"fd : [%d], "
-				"[外部服务(VNC), 所有数据包处理完成] "
-				")",
-				(int)syscall(SYS_gettid),
-				fd
-				);
-
 		if( mpVNCClient != NULL && mpVNCClient->fd == fd ) {
+			LogManager::GetLogManager()->Log(
+					LOG_MSG,
+					"TcpProxyServer::OnClose( "
+					"tid : %d, "
+					"fd : [%d], "
+					"[外部服务(VNC), 关闭socket] "
+					")",
+					(int)syscall(SYS_gettid),
+					fd
+					);
+
+			CloseSessionByVNC();
 			delete mpVNCClient;
 			mpVNCClient = NULL;
+
+			LogManager::GetLogManager()->Log(
+					LOG_STAT,
+					"TcpProxyServer::OnClose( "
+					"tid : %d, "
+					"fd : [%d], "
+					"[外部服务(VNC), 关闭socket完成] "
+					")",
+					(int)syscall(SYS_gettid),
+					fd
+					);
+
+		} else {
+			LogManager::GetLogManager()->Log(
+					LOG_MSG,
+					"TcpProxyServer::OnClose( "
+					"tid : %d, "
+					"fd : [%d], "
+					"[外部服务(VNC), 关闭非法socket] "
+					")",
+					(int)syscall(SYS_gettid),
+					fd
+					);
 		}
 
 	}
@@ -554,6 +599,17 @@ bool TcpProxyServer::ReturnVNC2Client(
 		) {
 	bool bFlag = false;
 
+	LogManager::GetLogManager()->Log(
+			LOG_STAT,
+			"TcpProxyServer::ReturnVNC2Client( "
+			"tid : %d, "
+			"cmd->header.seq : %d, "
+			"start "
+			")",
+			(int)syscall(SYS_gettid),
+			cmd->header.seq
+			);
+
 	mClient2SessionMap.Lock();
 	Client2SessionMap::iterator itr = mClient2SessionMap.Find(cmd->header.fd);
 	if( itr != mClient2SessionMap.End() ) {
@@ -657,6 +713,17 @@ bool TcpProxyServer::ReturnVNC2Client(
 				);
 	}
 	mClient2SessionMap.Unlock();
+
+	LogManager::GetLogManager()->Log(
+			LOG_STAT,
+			"TcpProxyServer::ReturnVNC2Client( "
+			"tid : %d, "
+			"cmd->header.seq : %d, "
+			"end "
+			")",
+			(int)syscall(SYS_gettid),
+			cmd->header.seq
+			);
 
 	return bFlag;
 }

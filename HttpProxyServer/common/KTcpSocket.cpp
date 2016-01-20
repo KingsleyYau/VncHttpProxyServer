@@ -60,13 +60,13 @@ int KTcpSocket::Connect(string strAddress, unsigned int uiPort, bool bBlocking) 
 
 	if ( (mSocket = socket(AF_INET, SOCK_STREAM, 0)) >= 0 ) {
 
-		bool bCanSelect = (mSocket > 1023)?false:true;
+		bool bCanSelect = false;//(mSocket > 1023)?false:true;
 
-		if( !bCanSelect && !bBlocking ) {
-			printf("KTcpSocket::Connect( nonblocking and can not be select : %s ) \n", bCanSelect?"true":"false");
-			iRet = -1;
-			goto EXIT_ERROR_TCP;
-		}
+//		if( !bCanSelect && !bBlocking ) {
+//			printf("KTcpSocket::Connect( nonblocking and can not be select : %s ) \n", bCanSelect?"true":"false");
+//			iRet = -1;
+//			goto EXIT_ERROR_TCP;
+//		}
 
 		bzero(&dest, sizeof(dest));
 		dest.sin_family = AF_INET;
@@ -198,8 +198,24 @@ int KTcpSocket::SendData(char* pBuffer, unsigned int uiSendLen, unsigned int uiT
     }
 
 	if(mbBlocking) {
-		iRet = send(mSocket, pBuffer, uiSendLen, 0);
-		goto EXIT_TCP_SEND;
+		while( uiSendLen > 0 ) {
+			iRet = send(mSocket, pBuffer, uiSendLen, 0);
+			if(iRet > 0) {
+				iSendedLen += iRet;
+				uiSendLen -= iRet;
+				pBuffer += iRet;
+
+				if (iSendedLen >= iOrgLen) {
+					iRet = iSendedLen;
+					break;
+				}
+
+			} else {
+				break;
+			}
+
+		}
+
 	}
 	else {
 		while (true) {
@@ -275,13 +291,29 @@ int KTcpSocket::RecvData(char* pBuffer, unsigned int uiRecvLen, bool bRecvAll, b
     }
 
 	if(mbBlocking) {
-		iRet = recv(mSocket, pBuffer, uiRecvLen, 0);
-		if(iRet > 0) {
+		while( uiRecvLen > 0 ) {
+			iRet = recv(mSocket, pBuffer, uiRecvLen, 0);
+			if(iRet > 0) {
+				iRecvedLen += iRet;
+				uiRecvLen -= iRet;
+				pBuffer += iRet;
+
+				if (iRecvedLen >= iOrgLen) {
+					iRet = iRecvedLen;
+					break;
+				}
+
+			} else {
+				bAlive = false;
+				break;
+			}
+
+            if (!bRecvAll) {
+                iRet = iRecvedLen;
+                break;
+            }
 		}
-		else {
-			bAlive = false;
-		}
-		goto EXIT_TCP_RECV;
+
 	}
 	else {
 		while (true) {

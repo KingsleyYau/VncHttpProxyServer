@@ -10,6 +10,7 @@
 
 #include "DataParser.h"
 #include "MessageList.h"
+#include "LogManager.h"
 
 #include <common/Arithmetic.hpp>
 #include <common/KMutex.h>

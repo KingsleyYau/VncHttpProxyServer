@@ -899,29 +899,48 @@ void TcpServer::Recv_Callback(ev_io *w, int revents) {
 //}
 
 void TcpServer::SendMessageByQueue(Message *m) {
-//	Arithmetic ari;
 	LogManager::GetLogManager()->Log(
 			LOG_MSG,
 			"TcpServer::SendMessageByQueue( "
 			"tid : %d, "
 			"m->fd : [%d] "
-//			"buffer( len : %d ) : [\n%s\n] "
+			"start "
 			")",
 			(int)syscall(SYS_gettid),
-			m->fd,
-			m->len
-//			ari.AsciiToHexWithSep(m->buffer, m->len).c_str()
+			m->fd
 			);
 
 	mCloseMutex.lock();
 	mpHandlingMessageCount[m->fd]++;
 	mCloseMutex.unlock();
 
+	LogManager::GetLogManager()->Log(
+			LOG_MSG,
+			"TcpServer::SendMessageByQueue( "
+			"tid : %d, "
+			"m->fd : [%d] "
+			"mCloseMutex ok "
+			")",
+			(int)syscall(SYS_gettid),
+			m->fd
+			);
+
 	mpPacketSeqSendMutex.lock();
 	m->seq = mpPacketSeqSend[m->fd]++;
 	mpPacketSeqSendMutex.unlock();
 
 	GetSendImmediatelyMessageList()->PushBack(m);
+
+	LogManager::GetLogManager()->Log(
+			LOG_MSG,
+			"TcpServer::SendMessageByQueue( "
+			"tid : %d, "
+			"m->fd : [%d] "
+			"end "
+			")",
+			(int)syscall(SYS_gettid),
+			m->fd
+			);
 
 }
 
@@ -1071,6 +1090,7 @@ void TcpServer::StopEvio(ev_io *w) {
 }
 
 void TcpServer::CloseSocketIfNeedByHandleThread(int fd) {
+	bool bClose = false;
 	mCloseMutex.lock();
 	--mpHandlingMessageCount[fd];
 
@@ -1100,14 +1120,19 @@ void TcpServer::CloseSocketIfNeedByHandleThread(int fd) {
 							fd
 							);
 
-			if( mpTcpServerObserver != NULL ) {
-				mpTcpServerObserver->OnClose(this, fd);
-			}
+			bClose = true;
 
-			close(fd);
 		}
 	}
 	mCloseMutex.unlock();
+
+	if( bClose ) {
+		if( mpTcpServerObserver != NULL ) {
+			mpTcpServerObserver->OnClose(this, fd);
+		}
+
+		close(fd);
+	}
 }
 
 MessageList *TcpServer::GetIdleMessageList() {
@@ -1170,6 +1195,7 @@ void TcpServer::OnDisconnect(int fd, Message *m) {
 		mpTcpServerObserver->OnDisconnect(this, fd);
 	}
 
+	bool bClose = false;
 	mCloseMutex.lock();
 	LogManager::GetLogManager()->Log(
 					LOG_STAT,
@@ -1198,17 +1224,21 @@ void TcpServer::OnDisconnect(int fd, Message *m) {
 						mpHandlingMessageCount[fd]
 						);
 
-		if( mpTcpServerObserver != NULL ) {
-			mpTcpServerObserver->OnClose(this, fd);
-		}
-
-		close(fd);
+		bClose = true;
 
 	} else {
 		mpCloseRecv[fd] = true;
 
 	}
 	mCloseMutex.unlock();
+
+	if( bClose ) {
+		if( mpTcpServerObserver != NULL ) {
+			mpTcpServerObserver->OnClose(this, fd);
+		}
+
+		close(fd);
+	}
 
 	if( m != NULL ) {
 		mIdleMessageList.PushBack(m);

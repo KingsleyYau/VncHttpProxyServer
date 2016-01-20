@@ -37,7 +37,7 @@ int DataHttpParser::ParseData(const char* buffer, int len) {
 		return -1;
 	}
 
-	printf("# DataHttpParser::ParseData( mbReceiveHeaderFinish : %s ) \n", mbReceiveHeaderFinish?"true":"false");
+//	printf("# DataHttpParser::ParseData( mbReceiveHeaderFinish : %s ) \n", mbReceiveHeaderFinish?"true":"false");
 
 	if( !mbReceiveHeaderFinish ) {
 		string headers = mBuffer;
@@ -51,37 +51,52 @@ int DataHttpParser::ParseData(const char* buffer, int len) {
 
 			// Read first line
 			pos = headers.find("\r\n");
-			if( pos!= string::npos ) {
+			if( pos != string::npos ) {
 				string firstLine = headers.substr(0, pos);
-				printf("# DataHttpParser::ParseData( firstLine : %s ) \n", firstLine.c_str());
-				char firstLineBuff[1024];
-				memcpy(firstLineBuff, firstLine.c_str(), firstLine.length());
+				char firstLineBuff[4096];
+				strcpy(firstLineBuff, firstLine.c_str());
 
-				headers = headers.substr(pos + strlen("\r\n"), headers.length() - (pos + strlen("\r\n")));
+//				LogManager::GetLogManager()->Log(
+//						LOG_MSG,
+//						"DataHttpParser::ParseData( "
+//						"firstLine : %s, "
+//						"headers : %s "
+//						")",
+//						firstLine.c_str(),
+//						headers.c_str()
+//						);
+//				headers = headers.substr(pos + strlen("\r\n"), headers.length() - (pos + strlen("\r\n")));
 				if( ParseFirstLine(firstLineBuff) ) {
 					string header;
 					string::size_type posStart, posEnd;
-					string::size_type posPre = 0;
+					string::size_type posPre = pos + strlen("\r\n");
 
 					// Get all headers
-					pos = headers.find("\r\n", 0);
-					while( pos!= string::npos ) {
+					pos = headers.find("\r\n", posPre);
+					while( pos != string::npos ) {
 						header = headers.substr(posPre, pos - posPre);
-						printf("# DataHttpParser::ParseData( header : %s ) \n", header.c_str());
+//						printf("# DataHttpParser::ParseData( header : %s ) \n", header.c_str());
+//						LogManager::GetLogManager()->Log(
+//								LOG_MSG,
+//								"DataHttpParser::ParseData( "
+//								"header : %s "
+//								")",
+//								header.c_str()
+//								);
 
 						if( header.length() > 0 ) {
 							// Get Host
 							posStart = header.find("Host: ");
 							if( posStart != string::npos ) {
 								mHost = header.substr(posStart + strlen("Host: "), header.length() - (posStart + strlen("Host:")));
-								printf("# DataHttpParser::ParseData( Host: %s ) \n", mHost.c_str());
+//								printf("# DataHttpParser::ParseData( Host: %s ) \n", mHost.c_str());
 							}
 
 							// Get Content-Length
 							posStart = header.find("Content-Length: ");
 							if( posStart != string::npos ) {
 								string contentLength = header.substr(posStart + strlen("Content-Length: "), header.length() - (posStart + strlen("Content-Length:")));
-								printf("# DataHttpParser::ParseData( Content-Length: %s ) \n", contentLength.c_str());
+//								printf("# DataHttpParser::ParseData( Content-Length: %s ) \n", contentLength.c_str());
 								miContentLength = atoi(contentLength.c_str());
 							}
 
@@ -179,7 +194,7 @@ bool DataHttpParser::ParseFirstLine(char* buffer) {
 			if( string::npos != pos ) {
 				mPath = mPath.substr(pos + strlen("http://"), mPath.length() - (pos + strlen("http://")));
 			}
-			printf("# DataHttpParser::ParseFirstLine( mPath : %s ) \n", mPath.c_str());
+//			printf("# DataHttpParser::ParseFirstLine( mPath : %s ) \n", mPath.c_str());
 
 		}break;
 		default:break;

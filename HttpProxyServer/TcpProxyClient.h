@@ -9,6 +9,8 @@
 #ifndef SNIFFERCLIENT_H_
 #define SNIFFERCLIENT_H_
 
+#include "LogManager.h"
+
 #include <CommandDef.h>
 
 #include <common/KTcpSocket.h>
