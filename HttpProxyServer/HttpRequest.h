@@ -32,7 +32,7 @@ public:
 	HttpRequest();
 	virtual ~HttpRequest();
 
-	long StartRequest(const string& url, const list<string> headers);
+	long StartRequest(const string& url, const list<string> headers, bool bPost = false);
 	void StopRequest(bool bWait = false);
 	void SetCallback(IHttpRequestCallback *callback);
 
@@ -58,6 +58,7 @@ private:
 	IHttpRequestCallback* mpIHttpRequestCallback;
 
 	string mUrl;
+	bool mbPost;
 	list<string> mHeaders;
 
 	char* mpRespondBuffer;

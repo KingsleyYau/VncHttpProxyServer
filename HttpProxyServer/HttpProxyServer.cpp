@@ -56,7 +56,7 @@ void HttpProxyServer::OnRecvProxyBuffer(TcpProxyClient* client, int seq, int fd,
 		request->SetNoCacheData(true);
 		request->SetSendData(pDataHttpParser->GetBody(), pDataHttpParser->GetContentLength());
 		request->SetFd(fd, seq);
-		if( !request->StartRequest(pDataHttpParser->GetUrl(), pDataHttpParser->GetHeaders()) ) {
+		if( !request->StartRequest(pDataHttpParser->GetUrl(), pDataHttpParser->GetHeaders(), pDataHttpParser->GetHttpType() == POST ) ) {
 			delete request;
 		}
 

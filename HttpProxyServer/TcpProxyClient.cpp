@@ -244,7 +244,7 @@ void TcpProxyClient::OnRecvCommand(const CMD &cmd) {
 void TcpProxyClient::HandleRecvProxyBuffer(const CMD &cmd) {
 	LogManager::GetLogManager()->Log(
 			LOG_MSG,
-			"TcpProxyClient::OnRecvProxyDisconnect( "
+			"TcpProxyClient::HandleRecvProxyBuffer( "
 			"[收到命令:代理Http请求], "
 			"cmd.header.fd : %d, "
 			"cmd.header.seq : %d "
@@ -260,7 +260,7 @@ void TcpProxyClient::HandleRecvProxyBuffer(const CMD &cmd) {
 void TcpProxyClient::HandleRecvProxyDisconnect(const CMD &cmd) {
 	LogManager::GetLogManager()->Log(
 			LOG_MSG,
-			"TcpProxyClient::OnRecvProxyDisconnect( "
+			"TcpProxyClient::HandleRecvProxyDisconnect( "
 			"[收到命令:代理断开请求], "
 			"cmd.header.fd : %d, "
 			"cmd.header.seq : %d "

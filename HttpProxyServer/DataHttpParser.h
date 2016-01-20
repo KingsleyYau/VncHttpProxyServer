@@ -43,9 +43,11 @@ public:
 	void Reset();
 
 	string GetUrl();
+	HttpType GetHttpType();
+	const Headers& GetHeaders();
+
 	const char* GetBody();
 	int GetContentLength();
-	const Headers& GetHeaders();
 
 private:
 	bool ParseFirstLine(char* buffer);

@@ -29,7 +29,7 @@ public:
 	virtual ~HttpClient();
 
 	static void Init();
-	bool Request(const string& url, const list<string> headers);
+	bool Request(const string& url, const list<string> headers, bool bPost = false);
 	void Stop();
 
 	void SetCallback(IHttpClientCallback *callback);

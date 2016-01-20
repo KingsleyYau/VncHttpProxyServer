@@ -7,6 +7,7 @@
  */
 
 #include "HttpRequest.h"
+#include "LogManager.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,7 +32,7 @@ public:
 
 protected:
 	void onRun() {
-		bool bFlag = mpHttpRequest->mHttpClient.Request(mpHttpRequest->mUrl, mpHttpRequest->mHeaders);
+		bool bFlag = mpHttpRequest->mHttpClient.Request(mpHttpRequest->mUrl, mpHttpRequest->mHeaders, mpHttpRequest->mbPost);
 		if( bFlag ) {
 			if( mpHttpRequest->mpIHttpRequestCallback != NULL ) {
 				mpHttpRequest->mpIHttpRequestCallback->onSuccess(
@@ -61,6 +62,7 @@ HttpRequest::HttpRequest() {
 	mbCache = false;
 	miCurrentSize = 0;
 	mpIHttpRequestCallback = NULL;
+	mbPost = false;
 
 	fd = -1;
 	seq = -1;
@@ -86,10 +88,11 @@ HttpRequest::~HttpRequest() {
 	}
 }
 
-long HttpRequest::StartRequest(const string& url, const list<string> headers) {
+long HttpRequest::StartRequest(const string& url, const list<string> headers, bool bPost) {
 	InitRespondBuffer();
 
 	mUrl = url;
+	mbPost = bPost;
 	std::copy(headers.begin(), headers.end(), std::back_inserter(mHeaders));
 
 	mKThread.stop();
@@ -215,9 +218,9 @@ bool HttpRequest::AddRequestBuffer(const char* buf, int size) {
 			}
 			mpRequestBuffer = newBuffer;
 		}
-		memcpy(mpRequestBuffer + miCurrentSize, buf, size);
-		miCurrentSize += size;
-		mpRequestBuffer[miCurrentSize] = '\0';
+		memcpy(mpRequestBuffer + miRequestCurrentSize, buf, size);
+		miRequestCurrentSize += size;
+		mpRequestBuffer[miRequestCurrentSize] = '\0';
 	}
 	return true;
 }

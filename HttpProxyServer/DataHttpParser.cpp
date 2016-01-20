@@ -45,9 +45,8 @@ int DataHttpParser::ParseData(const char* buffer, int len) {
 		string::size_type pos = headers.find("\r\n\r\n");
 
 		if( pos != string::npos ) {
-			headerIndex = pos + strlen("\r\n\r\n");
-
 			mbReceiveHeaderFinish = true;
+			headerIndex = pos + strlen("\r\n\r\n");
 
 			// Read first line
 			pos = headers.find("\r\n");
@@ -59,10 +58,10 @@ int DataHttpParser::ParseData(const char* buffer, int len) {
 //				LogManager::GetLogManager()->Log(
 //						LOG_MSG,
 //						"DataHttpParser::ParseData( "
-//						"firstLine : %s, "
+//						"headerIndex : %d, "
 //						"headers : %s "
 //						")",
-//						firstLine.c_str(),
+//						headerIndex,
 //						headers.c_str()
 //						);
 //				headers = headers.substr(pos + strlen("\r\n"), headers.length() - (pos + strlen("\r\n")));
@@ -97,6 +96,13 @@ int DataHttpParser::ParseData(const char* buffer, int len) {
 							if( posStart != string::npos ) {
 								string contentLength = header.substr(posStart + strlen("Content-Length: "), header.length() - (posStart + strlen("Content-Length:")));
 //								printf("# DataHttpParser::ParseData( Content-Length: %s ) \n", contentLength.c_str());
+//								LogManager::GetLogManager()->Log(
+//										LOG_MSG,
+//										"DataHttpParser::ParseData( "
+//										"Content-Length: %s "
+//										")",
+//										contentLength.c_str()
+//										);
 								miContentLength = atoi(contentLength.c_str());
 							}
 
@@ -110,18 +116,26 @@ int DataHttpParser::ParseData(const char* buffer, int len) {
 			}
 
 			if( mIndex > headerIndex ) {
-				memcpy(mBuffer, mBuffer + headerIndex, mIndex - headerIndex);
-
-			} else {
-				mBuffer[0] = '\0';
-				mIndex = 0;
-
+				mIndex -= headerIndex;
+				memcpy(mBuffer, mBuffer + headerIndex, mIndex);
+				mBuffer[mIndex] = '\0';
 			}
+
 		}
 	}
 
 	// Receive all body
 	if( mbReceiveHeaderFinish ) {
+//		LogManager::GetLogManager()->Log(
+//				LOG_MSG,
+//				"DataHttpParser::ParseData( "
+//				"miContentLength : %d, "
+//				"mIndex : %d "
+//				")",
+//				miContentLength,
+//				mIndex
+//				);
+
 		if( miContentLength == -1 || (mIndex == miContentLength) ) {
 			ret = 1;
 		}
@@ -152,6 +166,10 @@ string DataHttpParser::GetUrl() {
 	}
 
 	return url;
+}
+
+HttpType DataHttpParser::GetHttpType() {
+	return mHttpType;
 }
 
 const char* DataHttpParser::GetBody() {

@@ -53,7 +53,16 @@ void HttpClient::Stop() {
 	mbStop = true;
 }
 
-bool HttpClient::Request(const string& url, const list<string> headers) {
+bool HttpClient::Request(const string& url, const list<string> headers, bool bPost) {
+	LogManager::GetLogManager()->Log(
+			LOG_MSG,
+			"HttpClient::Request( "
+			"[http请求], "
+			"url : %s "
+			")",
+			url.c_str()
+			);
+
 	bool bFlag = true;
 
 	CURLcode res;
@@ -81,6 +90,9 @@ bool HttpClient::Request(const string& url, const list<string> headers) {
 
 	curl_easy_setopt(mpCURL, CURLOPT_HEADER, 1L);
 
+	if( bPost ) {
+		curl_easy_setopt(mpCURL, CURLOPT_POST, 1);
+	}
 
 	// 处理send
 	curl_easy_setopt(mpCURL, CURLOPT_READFUNCTION, CurlReadHandle);
@@ -142,7 +154,7 @@ bool HttpClient::Request(const string& url, const list<string> headers) {
 	LogManager::GetLogManager()->Log(
 			LOG_MSG,
 			"HttpClient::Request( "
-			"[http请求完成], "
+			"[http请求, 完成], "
 			"res : %d, "
 			"url : %s "
 			")",
@@ -189,8 +201,6 @@ size_t HttpClient::CurlReadHandle(void *buffer, size_t size, size_t nmemb, void 
 }
 
 int HttpClient::HttpReadHandle(void *buffer, size_t size, size_t nmemb) {
-//	printf("# HttpClient::HttpReadHandle( this : %p, size : %d , nmemb : %d ) \n", this, (int)size, (int)nmemb);
-
 	int len = size * nmemb;
 	if( mpIHttpClientCallback ) {
 		return mpIHttpClientCallback->onSendBody(this, (char*)buffer, len);
