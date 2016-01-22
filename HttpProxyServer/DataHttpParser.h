@@ -30,6 +30,7 @@ typedef list<string> Headers;
 typedef enum HttpType {
 	GET,
 	POST,
+	CONNECT,
 	UNKNOW,
 };
 

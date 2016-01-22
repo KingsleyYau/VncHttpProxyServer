@@ -8,7 +8,10 @@
 
 #include "HttpClient.h"
 #include "LogManager.h"
+
 #include <common/KMutex.h>
+
+#include <openssl/ssl.h>
 
 #define DWONLOAD_TIMEOUT 30
 
@@ -107,6 +110,19 @@ bool HttpClient::Request(const string& url, const list<string> headers, bool bPo
 	curl_easy_setopt(mpCURL, CURLOPT_NOPROGRESS, 0L);
 	curl_easy_setopt(mpCURL, CURLOPT_PROGRESSFUNCTION, CurlProgress);
 	curl_easy_setopt(mpCURL, CURLOPT_PROGRESSDATA, this);
+
+	// 处理https
+	if( url.find("https") != string::npos ) {
+		LogManager::GetLogManager()->Log(
+				LOG_MSG,
+				"HttpClient::Request( "
+				"[try to connect with ssl] "
+				")"
+				);
+		// 不检查服务器证书
+		curl_easy_setopt(mpCURL, CURLOPT_SSL_VERIFYPEER, 0L);
+		curl_easy_setopt(mpCURL, CURLOPT_SSL_VERIFYHOST, 0);
+	}
 
 	//	curl_easy_setopt(mpCURL, CURLOPT_FOLLOWLOCATION, 1);
 	// 设置连接超时

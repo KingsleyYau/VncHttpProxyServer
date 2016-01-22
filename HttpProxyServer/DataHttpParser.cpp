@@ -74,14 +74,13 @@ int DataHttpParser::ParseData(const char* buffer, int len) {
 					pos = headers.find("\r\n", posPre);
 					while( pos != string::npos ) {
 						header = headers.substr(posPre, pos - posPre);
-//						printf("# DataHttpParser::ParseData( header : %s ) \n", header.c_str());
-//						LogManager::GetLogManager()->Log(
-//								LOG_MSG,
-//								"DataHttpParser::ParseData( "
-//								"header : %s "
-//								")",
-//								header.c_str()
-//								);
+						LogManager::GetLogManager()->Log(
+								LOG_MSG,
+								"DataHttpParser::ParseData( "
+								"header : %s "
+								")",
+								header.c_str()
+								);
 
 						if( header.length() > 0 ) {
 							// Get Host
@@ -95,7 +94,6 @@ int DataHttpParser::ParseData(const char* buffer, int len) {
 							posStart = header.find("Content-Length: ");
 							if( posStart != string::npos ) {
 								string contentLength = header.substr(posStart + strlen("Content-Length: "), header.length() - (posStart + strlen("Content-Length:")));
-//								printf("# DataHttpParser::ParseData( Content-Length: %s ) \n", contentLength.c_str());
 //								LogManager::GetLogManager()->Log(
 //										LOG_MSG,
 //										"DataHttpParser::ParseData( "
@@ -115,9 +113,11 @@ int DataHttpParser::ParseData(const char* buffer, int len) {
 				}
 			}
 
-			if( mIndex > headerIndex ) {
+			if( mIndex >= headerIndex ) {
 				mIndex -= headerIndex;
-				memcpy(mBuffer, mBuffer + headerIndex, mIndex);
+				if( mIndex > 0 ) {
+					memcpy(mBuffer, mBuffer + headerIndex, mIndex);
+				}
 				mBuffer[mIndex] = '\0';
 			}
 
@@ -126,15 +126,15 @@ int DataHttpParser::ParseData(const char* buffer, int len) {
 
 	// Receive all body
 	if( mbReceiveHeaderFinish ) {
-//		LogManager::GetLogManager()->Log(
-//				LOG_MSG,
-//				"DataHttpParser::ParseData( "
-//				"miContentLength : %d, "
-//				"mIndex : %d "
-//				")",
-//				miContentLength,
-//				mIndex
-//				);
+		LogManager::GetLogManager()->Log(
+				LOG_MSG,
+				"DataHttpParser::ParseData( "
+				"miContentLength : %d, "
+				"mIndex : %d "
+				")",
+				miContentLength,
+				mIndex
+				);
 
 		if( miContentLength == -1 || (mIndex == miContentLength) ) {
 			ret = 1;
@@ -161,8 +161,14 @@ string DataHttpParser::GetUrl() {
 		url += mPath;
 	}
 
-	if( string::npos == url.find("http://") ) {
-		url = "http://" + url;
+	if( mHttpType == CONNECT ) {
+		if( string::npos == url.find("https://") ) {
+			url = "https://" + url;
+		}
+	} else {
+		if( string::npos == url.find("http://") ) {
+			url = "http://" + url;
+		}
 	}
 
 	return url;
@@ -200,10 +206,20 @@ bool DataHttpParser::ParseFirstLine(char* buffer) {
 				mHttpType = GET;
 			} else if( strcmp("POST", p) == 0 ) {
 				mHttpType = POST;
+			} else if( strcmp("CONNECT", p) == 0 ) {
+				mHttpType = CONNECT;
 			} else {
 				bFlag = false;
 				break;
 			}
+			LogManager::GetLogManager()->Log(
+					LOG_MSG,
+					"DataHttpParser::ParseFirstLine( "
+					"mHttpType : %d "
+					")",
+					mHttpType
+					);
+
 		}break;
 		case 1:{
 			// path and parameters
@@ -221,6 +237,8 @@ bool DataHttpParser::ParseFirstLine(char* buffer) {
 		j++;
 		p = strtok_r(NULL, " ", &pFirst);
 	}
+
+
 
 	return bFlag;
 }
