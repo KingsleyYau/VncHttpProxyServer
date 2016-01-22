@@ -221,6 +221,10 @@ bool TcpProxyServer::OnAccept(TcpServer *ts, int fd, char* ip) {
 		mClientMap.Insert(fd, client);
 		mClientMap.Unlock();
 
+		mCountMutex.lock();
+		mTotal++;
+		mCountMutex.unlock();
+
 		LogManager::GetLogManager()->Log(
 				LOG_MSG,
 				"TcpProxyServer::OnAccept( "
@@ -417,11 +421,6 @@ void TcpProxyServer::OnRecvMessage(TcpServer *ts, Message *m) {
 	if( &mClientTcpServer == ts ) {
 		// 内部服务(HTTP)请求
 		HandleRecvMessage(ts, m);
-
-		mCountMutex.lock();
-		mTotal++;
-		mResponed += GetTickCount() - m->starttime;
-		mCountMutex.unlock();
 
 	} else if( &mClientTcpVNCServer == ts ){
 		HandleRecvVNCMessage(ts, m);

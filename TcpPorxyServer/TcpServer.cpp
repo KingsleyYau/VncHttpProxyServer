@@ -904,7 +904,6 @@ void TcpServer::SendMessageByQueue(Message *m) {
 			"TcpServer::SendMessageByQueue( "
 			"tid : %d, "
 			"m->fd : [%d] "
-			"start "
 			")",
 			(int)syscall(SYS_gettid),
 			m->fd
@@ -914,17 +913,6 @@ void TcpServer::SendMessageByQueue(Message *m) {
 	mpHandlingMessageCount[m->fd]++;
 	mCloseMutex.unlock();
 
-	LogManager::GetLogManager()->Log(
-			LOG_MSG,
-			"TcpServer::SendMessageByQueue( "
-			"tid : %d, "
-			"m->fd : [%d] "
-			"mCloseMutex ok "
-			")",
-			(int)syscall(SYS_gettid),
-			m->fd
-			);
-
 	mpPacketSeqSendMutex.lock();
 	m->seq = mpPacketSeqSend[m->fd]++;
 	mpPacketSeqSendMutex.unlock();
@@ -932,7 +920,7 @@ void TcpServer::SendMessageByQueue(Message *m) {
 	GetSendImmediatelyMessageList()->PushBack(m);
 
 	LogManager::GetLogManager()->Log(
-			LOG_MSG,
+			LOG_STAT,
 			"TcpServer::SendMessageByQueue( "
 			"tid : %d, "
 			"m->fd : [%d] "
