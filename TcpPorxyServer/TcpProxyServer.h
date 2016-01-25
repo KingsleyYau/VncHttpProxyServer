@@ -14,7 +14,6 @@
 #include "MessageList.h"
 #include "TcpServer.h"
 
-#include <json/json.h>
 #include <common/ConfFile.hpp>
 #include <common/KSafeMap.h>
 #include <common/TimeProc.hpp>
